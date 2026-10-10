@@ -7,6 +7,7 @@ import uuid
 from datetime import datetime
 from jour_cli.config import load_config, get_storage_path, _default_editor
 from jour_cli.db import index_note, delete_note, get_note_filepath
+from jour_cli.logging import read_history
 
 def cmd_notes_make(args):
     config = load_config()
@@ -127,6 +128,16 @@ def cmd_notes_edit(args):
     
     # Get the filename from hash (hash is the basename without extension)
     filename = args.hash
+    
+    # If no hash provided, get the last edited note from history
+    if not filename:
+        history = read_history(limit=1)
+        if history and len(history) > 0:
+            last_cmd = history[0]
+            # Extract the hash from the command (last argument before editor path)
+            parts = shlex.split(last_cmd)
+            if len(parts) >= 2:
+                filename = parts[-1]
     
     # Append extension if not present
     ext = config.get("storage", {}).get("extension", "jmd")
