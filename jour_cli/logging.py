@@ -26,7 +26,6 @@ def deep_merge(base: dict, override: dict) -> dict:
 
 def load_config(file_ops: Optional[FileOperations] = FileOperations(),) -> Optional[dict]:
     """Load configuration from config file."""
-    import glob
     config_path = get_storage_path() + "/config.json"
     if not file_ops.exists(config_path):
         return None

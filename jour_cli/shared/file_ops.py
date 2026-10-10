@@ -6,9 +6,6 @@ import shlex
 import subprocess
 import uuid
 from datetime import datetime
-from typing import Callable, Optional
-from jour_cli.config import load_config, get_storage_path, _default_editor
-from jour_cli.db import index_note, delete_note, get_note_filepath
 
 
 class FileOperations:
