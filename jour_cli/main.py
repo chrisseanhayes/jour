@@ -82,7 +82,9 @@ def history(
     """Show command history."""
     args = type('Args', (), {'count': count})()
     log_command("history", args=args)
-    read_history(limit=count)
+    lines = read_history(limit=count)
+    for line in lines:
+        print(line)
 
 
 @tags_app.command("list")
