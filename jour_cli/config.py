@@ -1,5 +1,6 @@
 import os
 import sys
+
 import yaml
 
 JOUR_DIR = os.path.expanduser("~/.jour")

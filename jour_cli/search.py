@@ -1,5 +1,7 @@
 import subprocess
-from jour_cli.config import load_config, get_storage_path
+
+from jour_cli.config import get_storage_path, load_config
+
 
 def cmd_search(args):
     config = load_config()

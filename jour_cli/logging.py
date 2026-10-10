@@ -1,7 +1,8 @@
+import json
 from datetime import datetime
 from typing import Optional
-import json
-from jour_cli.config import load_config, get_storage_path
+
+from jour_cli.config import get_storage_path, load_config
 from jour_cli.shared.file_ops import FileOperations
 
 

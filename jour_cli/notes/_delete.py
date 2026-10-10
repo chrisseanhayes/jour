@@ -1,7 +1,9 @@
-from typing import Optional
 import sys
-from jour_cli.config import load_config, get_storage_path
+from typing import Optional
+
+from jour_cli.config import get_storage_path, load_config
 from jour_cli.db import delete_note
+
 from ..shared.file_ops import FileOperations
 
 

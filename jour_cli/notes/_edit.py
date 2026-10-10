@@ -1,7 +1,9 @@
-from typing import Optional
 import sys
-from jour_cli.config import load_config, _default_editor
+from typing import Optional
+
+from jour_cli.config import _default_editor, load_config
 from jour_cli.db import get_note_filepath
+
 from ..shared.file_ops import FileOperations, _resolve_filename_from_history
 
 

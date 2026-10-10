@@ -1,15 +1,17 @@
+from typing import Any, Callable, Optional
+
 import typer
-from typing import Optional, Callable, Any
+
+from jour_cli.logging import log_command, read_history
 from jour_cli.notes import (
-    cmd_notes_make,
-    cmd_notes_list,
     cmd_notes_cat,
     cmd_notes_delete,
     cmd_notes_edit,
+    cmd_notes_list,
+    cmd_notes_make,
 )
-from jour_cli.tags import cmd_tags_list, cmd_tags_show
 from jour_cli.search import cmd_search
-from jour_cli.logging import log_command, read_history
+from jour_cli.tags import cmd_tags_list, cmd_tags_show
 
 app = typer.Typer()
 notes_app = typer.Typer()

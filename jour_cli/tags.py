@@ -1,5 +1,6 @@
 from jour_cli.config import load_config
-from jour_cli.db import get_tag_counts, get_notes_for_tag
+from jour_cli.db import get_notes_for_tag, get_tag_counts
+
 
 def cmd_tags_list(args):
     load_config()
