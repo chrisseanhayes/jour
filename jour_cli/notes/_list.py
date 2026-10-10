@@ -1,6 +1,6 @@
 from typing import Optional
 from jour_cli.config import load_config, get_storage_path
-from jour_cli.notes import FileOperations, _parse_note_content, _get_body_preview
+from jour_cli.shared import FileOperations, _parse_note_content, _get_body_preview
 
 
 def cmd_notes_list(

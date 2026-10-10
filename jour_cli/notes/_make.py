@@ -1,7 +1,7 @@
 from typing import Optional
 from jour_cli.config import load_config, get_storage_path, _default_editor
 from jour_cli.db import index_note
-from jour_cli.notes import FileOperations, _resolve_note_body, _build_note_content
+from jour_cli.shared import FileOperations, _resolve_note_body, _build_note_content
 
 
 def cmd_notes_make(

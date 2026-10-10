@@ -1,7 +1,7 @@
 from typing import Optional
 import sys
 from jour_cli.config import load_config, get_storage_path
-from jour_cli.notes import FileOperations
+from jour_cli.shared import FileOperations
 
 
 def cmd_notes_cat(
