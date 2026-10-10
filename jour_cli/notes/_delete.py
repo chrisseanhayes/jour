@@ -2,7 +2,7 @@ from typing import Optional
 import sys
 from jour_cli.config import load_config, get_storage_path
 from jour_cli.db import delete_note
-from jour_cli.shared import FileOperations
+from ..shared.file_ops import FileOperations
 
 
 def cmd_notes_delete(
