@@ -34,6 +34,9 @@ def read_history(limit=20):
     history_path = get_history_path()
     
     if not os.path.exists(history_path):
+        # Create empty history file to ensure it exists for future logging
+        with open(history_path, "w") as f:
+            pass
         return []
     
     with open(history_path, "r") as f:
