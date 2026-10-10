@@ -128,6 +128,11 @@ def cmd_notes_edit(args):
     # Get the filename from hash (hash is the basename without extension)
     filename = args.hash
     
+    # Append extension if not present
+    ext = config.get("storage", {}).get("extension", "jmd")
+    if not filename.endswith(ext):
+        filename = f"{filename}.{ext}"
+    
     # Look up the filepath in the database
     filepath = get_note_filepath(filename)
     
