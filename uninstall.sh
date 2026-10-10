@@ -20,7 +20,7 @@ done
 echo "Uninstalling jour..."
 
 if command -v pipx >/dev/null 2>&1; then
-    pipx uninstall jour
+    pipx uninstall jour-cli
 else
     echo "Warning: pipx is not available. Cannot uninstall jour via pipx."
 fi
