@@ -28,3 +28,16 @@ def log_command(command, args=None):
     
     with open(history_path, "a") as f:
         f.write(log_line)
+
+def read_history(limit=20):
+    """Read and return the last N lines from the history file."""
+    history_path = get_history_path()
+    
+    if not os.path.exists(history_path):
+        return []
+    
+    with open(history_path, "r") as f:
+        lines = f.readlines()
+    
+    # Return last N lines (or all if fewer than N)
+    return [line.rstrip("\n") for line in lines[-limit:]]

@@ -3,7 +3,7 @@ from datetime import datetime
 from jour_cli.notes import cmd_notes_make, cmd_notes_list, cmd_notes_cat, cmd_notes_delete, cmd_notes_edit
 from jour_cli.tags import cmd_tags_list, cmd_tags_show
 from jour_cli.search import cmd_search
-from jour_cli.logging import log_command
+from jour_cli.logging import log_command, read_history
 
 def main():
     parser = argparse.ArgumentParser(description="Minimal CLI Journal")
@@ -31,6 +31,9 @@ def main():
     
     search_parser = subparsers.add_parser("search")
     search_parser.add_argument("query")
+    
+    history_parser = subparsers.add_parser("history")
+    history_parser.add_argument("-n", "--count", type=int, default=20, help="Number of entries to show (default: 20)")
     
     args = parser.parse_args()
     
@@ -60,6 +63,10 @@ def main():
     elif args.command == "search":
         log_command("search", args)
         cmd_search(args)
+    elif args.command == "history":
+        history_entries = read_history(args.count)
+        for entry in history_entries:
+            print(entry)
 
 if __name__ == "__main__":
     main()
