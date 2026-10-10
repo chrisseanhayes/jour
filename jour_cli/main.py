@@ -1,7 +1,9 @@
 import argparse
+from datetime import datetime
 from jour_cli.notes import cmd_notes_make, cmd_notes_list, cmd_notes_cat, cmd_notes_delete, cmd_notes_edit
 from jour_cli.tags import cmd_tags_list, cmd_tags_show
 from jour_cli.search import cmd_search
+from jour_cli.logging import log_command
 
 def main():
     parser = argparse.ArgumentParser(description="Minimal CLI Journal")
@@ -34,21 +36,29 @@ def main():
     
     if args.command == "notes":
         if args.action == "make":
+            log_command("notes make", args)
             cmd_notes_make(args)
         elif args.action == "list":
+            log_command("notes list", args)
             cmd_notes_list(args)
         elif args.action == "cat":
+            log_command("notes cat", args)
             cmd_notes_cat(args)
         elif args.action == "delete":
+            log_command("notes delete", args)
             cmd_notes_delete(args)
         elif args.action == "edit":
+            log_command("notes edit", args)
             cmd_notes_edit(args)
     elif args.command == "tags":
         if args.action == "list":
+            log_command("tags list", args)
             cmd_tags_list(args)
         elif args.action == "show":
+            log_command("tags show", args)
             cmd_tags_show(args)
     elif args.command == "search":
+        log_command("search", args)
         cmd_search(args)
 
 if __name__ == "__main__":
