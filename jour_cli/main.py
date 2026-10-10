@@ -1,5 +1,5 @@
 import argparse
-from jour_cli.notes import cmd_notes_make, cmd_notes_list, cmd_notes_cat
+from jour_cli.notes import cmd_notes_make, cmd_notes_list, cmd_notes_cat, cmd_notes_delete
 from jour_cli.tags import cmd_tags_list, cmd_tags_show
 from jour_cli.search import cmd_search
 
@@ -16,6 +16,8 @@ def main():
     notes_sub.add_parser("list")
     cat_parser = notes_sub.add_parser("cat")
     cat_parser.add_argument("hash")
+    delete_parser = notes_sub.add_parser("delete")
+    delete_parser.add_argument("hash")
     
     tags_parser = subparsers.add_parser("tags")
     tags_sub = tags_parser.add_subparsers(dest="action", required=True)
@@ -35,6 +37,8 @@ def main():
             cmd_notes_list(args)
         elif args.action == "cat":
             cmd_notes_cat(args)
+        elif args.action == "delete":
+            cmd_notes_delete(args)
     elif args.command == "tags":
         if args.action == "list":
             cmd_tags_list(args)

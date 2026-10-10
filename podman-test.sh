@@ -15,3 +15,6 @@ podman run --rm "$IMAGE" sh tests/test_tags.sh
 
 echo "\n==> Running cat tests"
 podman run --rm "$IMAGE" sh tests/test_cat.sh
+
+echo "\n==> Running delete tests"
+podman run --rm "$IMAGE" sh tests/test_delete.sh

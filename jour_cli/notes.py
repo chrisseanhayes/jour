@@ -6,7 +6,7 @@ import subprocess
 import uuid
 from datetime import datetime
 from jour_cli.config import load_config, get_storage_path, _default_editor
-from jour_cli.db import index_note
+from jour_cli.db import index_note, delete_note
 
 def cmd_notes_make(args):
     config = load_config()
@@ -73,6 +73,21 @@ def cmd_notes_cat(args):
     if os.path.exists(filepath):
         with open(filepath, "r") as f:
             print(f.read(), end="")
+    else:
+        print(f"Error: Note {args.hash} not found.", file=sys.stderr)
+        sys.exit(1)
+
+def cmd_notes_delete(args):
+    config = load_config()
+    storage = get_storage_path(config)
+    ext = config.get("storage", {}).get("extension", "jmd")
+    
+    filename = f"{args.hash}.{ext}"
+    filepath = os.path.join(storage, filename)
+    if os.path.exists(filepath):
+        os.remove(filepath)
+        delete_note(filename)
+        print(f"Note {args.hash} deleted.")
     else:
         print(f"Error: Note {args.hash} not found.", file=sys.stderr)
         sys.exit(1)

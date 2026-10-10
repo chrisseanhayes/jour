@@ -79,3 +79,10 @@ def get_notes_for_tag(tag):
             (tag,),
         ).fetchall()
     return [row["filename"] for row in rows]
+
+def delete_note(filename):
+    """Delete a note record and associated tags."""
+    with _get_conn() as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        conn.execute("DELETE FROM notes WHERE filename = ?", (filename,))
+
