@@ -61,8 +61,38 @@ def cmd_notes_list(args):
     storage = get_storage_path(config)
     ext = config.get("storage", {}).get("extension", "jmd")
     
-    for f in sorted(glob.glob(os.path.join(storage, f"*.{ext}")), reverse=True):
-        print(os.path.basename(f))
+    for f_path in sorted(glob.glob(os.path.join(storage, f"*.{ext}")), reverse=True):
+        basename = os.path.splitext(os.path.basename(f_path))[0]
+        
+        try:
+            with open(f_path, "r") as f:
+                content = f.read()
+        except:
+            continue
+            
+        parts = content.split("---", 2)
+        tags = []
+        body = ""
+        if len(parts) >= 3:
+            front_matter = parts[1]
+            body = parts[2].strip()
+            for line in front_matter.split("\n"):
+                if line.startswith("tags: "):
+                    tags_str = line[len("tags: "):].strip()
+                    import ast
+                    try:
+                        tags = ast.literal_eval(tags_str)
+                    except:
+                        pass
+        else:
+            body = content.strip()
+            
+        body_preview = body.replace("\n", " ")
+        if len(body_preview) > 40:
+            body_preview = body_preview[:37] + "..."
+            
+        tags_display = f"[{', '.join(tags)}]" if tags else "[]"
+        print(f"{basename} {tags_display} {body_preview}")
 
 def cmd_notes_cat(args):
     config = load_config()

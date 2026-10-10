@@ -184,7 +184,7 @@ fi
 # ---------------------------------------------------------------------------
 echo "\n[15] output redirection"
 jour notes list > output_redir.txt
-if grep -q "$(basename "$LATEST")" output_redir.txt; then
+if grep -q "$(basename "$LATEST" .jmd)" output_redir.txt; then
     pass "output redirection works"
 else
     fail "output redirection failed"
