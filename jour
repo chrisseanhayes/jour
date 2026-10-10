@@ -1,0 +1,3 @@
+Modern macOS enforces PEP 668, blocking direct pip installs outside of isolated environments to protect system stability.
+
+Use pipx to install local CLI applications cleanly.
