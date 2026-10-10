@@ -1,15 +1,19 @@
 import typer
 from typing import Optional
-from jour_cli.notes import cmd_notes_make, cmd_notes_list, cmd_notes_cat, cmd_notes_delete, cmd_notes_edit
+from jour_cli.notes import (
+    FileOperations,
+    cmd_notes_make,
+    cmd_notes_list,
+    cmd_notes_cat,
+    cmd_notes_delete,
+    cmd_notes_edit,
+)
 from jour_cli.tags import cmd_tags_list, cmd_tags_show
 from jour_cli.search import cmd_search
-from jour_cli.logging import log_command, read_history
 
-app = typer.Typer(help="Minimal CLI Journal")
-
-notes_app = typer.Typer(help="Manage journal notes.")
-tags_app = typer.Typer(help="Manage tags.")
-
+app = typer.Typer()
+notes_app = typer.Typer()
+tags_app = typer.Typer()
 app.add_typer(notes_app, name="notes")
 app.add_typer(tags_app, name="tags")
 
@@ -21,21 +25,13 @@ def notes_make(
     file: Optional[str] = typer.Argument(None, help="Optional file to read note from"),
 ):
     """Create a new note."""
-    args = type('Args', (), {
-        'note': note,
-        'tag': tag,
-        'file': file
-    })()
-    log_command("notes make", args)
-    cmd_notes_make(args)
+    cmd_notes_make(args=type('Args', (), {'note': note, 'tag': tag, 'file': file})())
 
 
 @notes_app.command("list")
 def notes_list():
     """List all notes."""
-    args = type('Args', (), {})()
-    log_command("notes list", args)
-    cmd_notes_list(args)
+    cmd_notes_list(args=type('Args', (), {})())
 
 
 @notes_app.command("cat")
@@ -43,9 +39,7 @@ def notes_cat(
     hash: str = typer.Argument(..., help="Note hash"),
 ):
     """View a note by hash."""
-    args = type('Args', (), {'hash': hash})()
-    log_command("notes cat", args)
-    cmd_notes_cat(args)
+    cmd_notes_cat(args=type('Args', (), {'hash': hash})())
 
 
 @notes_app.command("delete")
@@ -53,9 +47,7 @@ def notes_delete(
     hash: str = typer.Argument(..., help="Note hash"),
 ):
     """Delete a note by hash."""
-    args = type('Args', (), {'hash': hash})()
-    log_command("notes delete", args)
-    cmd_notes_delete(args)
+    cmd_notes_delete(args=type('Args', (), {'hash': hash})())
 
 
 @notes_app.command("edit")
@@ -63,27 +55,7 @@ def notes_edit(
     hash: str = typer.Argument(..., help="Note hash"),
 ):
     """Edit a note by hash."""
-    args = type('Args', (), {'hash': hash})()
-    log_command("notes edit", args)
-    cmd_notes_edit(args)
-
-
-@tags_app.command("list")
-def tags_list():
-    """List all tags."""
-    args = type('Args', (), {})()
-    log_command("tags list", args)
-    cmd_tags_list(args)
-
-
-@tags_app.command("show")
-def tags_show(
-    tag: str = typer.Argument(..., help="Tag name"),
-):
-    """Show a specific tag."""
-    args = type('Args', (), {'tag': tag})()
-    log_command("tags show", args)
-    cmd_tags_show(args)
+    cmd_notes_edit(args=type('Args', (), {'hash': hash})())
 
 
 @app.command()
@@ -91,9 +63,7 @@ def search(
     query: str = typer.Argument(..., help="Search query"),
 ):
     """Search notes."""
-    args = type('Args', (), {'query': query})()
-    log_command("search", args)
-    cmd_search(args)
+    cmd_search(args=type('Args', (), {'query': query})())
 
 
 @app.command()
@@ -101,9 +71,8 @@ def history(
     count: int = typer.Option(20, "-n", "--count", help="Number of entries to show (default: 20)"),
 ):
     """Show command history."""
-    history_entries = read_history(count)
-    for entry in history_entries:
-        print(entry)
+    from jour_cli.logging import read_history
+    read_history(limit=count)
 
 
 def main():
