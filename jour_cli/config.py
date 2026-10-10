@@ -44,6 +44,8 @@ def load_config():
             user_config = yaml.safe_load(f)
             if isinstance(user_config, dict):
                 config = deep_merge(config, user_config)
+    from jour_cli.db import init_db
+    init_db()
     return config
 
 def get_storage_path(config):

@@ -1,6 +1,5 @@
 #!/usr/bin/env sh
 # Smoke tests for jour CLI — runs inside the container.
-set -e
 
 PASS=0
 FAIL=0
@@ -96,6 +95,66 @@ if [ -n "$OUTPUT" ]; then
     pass "search returned a match"
 else
     fail "search returned no match"
+fi
+
+# ---------------------------------------------------------------------------
+# 9. note body is actually written to the file
+# ---------------------------------------------------------------------------
+echo "\n[9] note body persisted to file"
+jour notes make --note "persisted body check"
+LATEST=$(ls -t ~/.jour/*.jmd | head -1)
+if grep -q "persisted body check" "$LATEST"; then
+    pass "note body found in file"
+else
+    fail "note body missing from file"
+fi
+
+# ---------------------------------------------------------------------------
+# 10. multiline pipe body is written in full
+# ---------------------------------------------------------------------------
+echo "\n[10] multiline piped body"
+printf "line one\nline two\nline three" | jour notes make
+LATEST=$(ls -t ~/.jour/*.jmd | head -1)
+if grep -q "line one" "$LATEST" && grep -q "line three" "$LATEST"; then
+    pass "multiline pipe body fully written"
+else
+    fail "multiline pipe body incomplete"
+fi
+
+# ---------------------------------------------------------------------------
+# 11. -n short flag (alias for --note)
+# ---------------------------------------------------------------------------
+echo "\n[11] -n short flag"
+jour notes make -n "short flag note"
+LATEST=$(ls -t ~/.jour/*.jmd | head -1)
+if grep -q "short flag note" "$LATEST"; then
+    pass "-n short flag written correctly"
+else
+    fail "-n short flag body missing"
+fi
+
+# ---------------------------------------------------------------------------
+# 12. single tag via -t
+# ---------------------------------------------------------------------------
+echo "\n[12] single tag via -t"
+jour notes make -n "single tag note" -t "journal"
+LATEST=$(ls -t ~/.jour/*.jmd | head -1)
+if grep -q "journal" "$LATEST"; then
+    pass "single tag written to front matter"
+else
+    fail "single tag missing from front matter"
+fi
+
+# ---------------------------------------------------------------------------
+# 13. multiple comma-delimited tags — all present in front matter
+# ---------------------------------------------------------------------------
+echo "\n[13] multiple comma-delimited tags"
+jour notes make -n "multi tag note" -t "alpha,beta,gamma"
+LATEST=$(ls -t ~/.jour/*.jmd | head -1)
+if grep -q "alpha" "$LATEST" && grep -q "beta" "$LATEST" && grep -q "gamma" "$LATEST"; then
+    pass "all three tags written to front matter"
+else
+    fail "one or more tags missing from front matter"
 fi
 
 # ---------------------------------------------------------------------------
