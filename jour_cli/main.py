@@ -75,6 +75,20 @@ def history(
     read_history(limit=count)
 
 
+@tags_app.command("list")
+def tags_list():
+    """List all tags."""
+    cmd_tags_list(args=type('Args', (), {})())
+
+
+@tags_app.command("show")
+def tags_show(
+    tag: str = typer.Argument(..., help="Tag name"),
+):
+    """Show notes for a specific tag."""
+    cmd_tags_show(args=type('Args', (), {'tag': tag})())
+
+
 def main():
     app()
 
