@@ -1,6 +1,8 @@
 from typing import Optional
 import sys
-from jour_cli.notes import FileOperations, get_note_filepath
+from jour_cli.config import load_config, get_storage_path, _default_editor
+from jour_cli.db import get_note_filepath
+from jour_cli.notes import FileOperations, _resolve_filename_from_history
 
 
 def cmd_notes_edit(
