@@ -1,4 +1,5 @@
 import os
+import ast
 import sys
 import glob
 import shlex
@@ -76,6 +77,32 @@ class FileOperations:
         return self._read_history(limit=limit)
 
 
+def _resolve_note_body(args, file_ops: FileOperations) -> str:
+    """Resolve note body from --note flag, file argument, stdin, or empty string."""
+    note_body = getattr(args, "note", None)
+    if not note_body:
+        file_arg = getattr(args, "file", None)
+        if file_arg:
+            note_body = file_ops.read_file(file_arg)
+        elif not file_ops._sys_stdin.isatty():
+            note_body = file_ops.stdin_read()
+            
+    return note_body if note_body is not None else ""
+
+
+def _build_note_content(layout: str, date_str: str, tags: list, note_body: str) -> str:
+    """Construct the markdown content with YAML front-matter."""
+    return f"""---
+layout: {layout}
+title: "{date_str}"
+date: {date_str}
+tags: {tags}
+---
+
+{note_body}
+"""
+
+
 def cmd_notes_make(
     args,
     file_ops: Optional[FileOperations] = None,
@@ -100,34 +127,43 @@ def cmd_notes_make(
     if getattr(args, "tag", None):
         tags = [t.strip() for t in args.tag.split(",") if t.strip()]
 
-    # Priority: --note flag > file argument > piped stdin > open editor
-    note_body = getattr(args, "note", None)
-    if not note_body:
-        file_arg = getattr(args, "file", None)
-        if file_arg:
-            note_body = file_ops.read_file(file_arg)
-        elif not file_ops._sys_stdin.isatty():
-            note_body = file_ops.stdin_read()
-            
-    if note_body is None:
-        note_body = ""
-
-    content = f"""---
-layout: {layout}
-title: "{date_str}"
-date: {date_str}
-tags: {tags}
----
-
-{note_body}
-"""
+    note_body = _resolve_note_body(args, file_ops)
+    content = _build_note_content(layout, date_str, tags, note_body)
+    
     file_ops.write_file(filepath, content)
-
     index_note(filepath, tags)
 
     if not note_body:
         editor_cmd = config.get("editor", {}).get("command") or _default_editor()
         file_ops.run_command(editor_cmd + [filepath])
+
+
+def _parse_note_content(content: str) -> tuple[list, str]:
+    """Parse front-matter tags and body from note content."""
+    parts = content.split("---", 2)
+    tags = []
+    body = ""
+    if len(parts) >= 3:
+        front_matter = parts[1]
+        body = parts[2].strip()
+        for line in front_matter.split("\n"):
+            if line.startswith("tags: "):
+                tags_str = line[len("tags: "):].strip()
+                try:
+                    tags = ast.literal_eval(tags_str)
+                except:
+                    pass
+    else:
+        body = content.strip()
+    return tags, body
+
+
+def _get_body_preview(body: str, max_length: int = 40) -> str:
+    """Generate a single-line truncated preview of the note body."""
+    body_preview = body.replace("\n", " ")
+    if len(body_preview) > max_length:
+        body_preview = body_preview[:max_length - 3] + "..."
+    return body_preview
 
 
 def cmd_notes_list(
@@ -147,31 +183,12 @@ def cmd_notes_list(
         basename = file_ops.splitext(file_ops.basename(f_path))[0]
         
         try:
-            with file_ops._open(f_path, "r") as f:
-                content = f.read()
+            content = file_ops.read_file(f_path)
         except:
             continue
             
-        parts = content.split("---", 2)
-        tags = []
-        body = ""
-        if len(parts) >= 3:
-            front_matter = parts[1]
-            body = parts[2].strip()
-            for line in front_matter.split("\n"):
-                if line.startswith("tags: "):
-                    tags_str = line[len("tags: "):].strip()
-                    import ast
-                    try:
-                        tags = ast.literal_eval(tags_str)
-                    except:
-                        pass
-        else:
-            body = content.strip()
-            
-        body_preview = body.replace("\n", " ")
-        if len(body_preview) > 40:
-            body_preview = body_preview[:37] + "..."
+        tags, body = _parse_note_content(content)
+        body_preview = _get_body_preview(body)
             
         tags_display = f"[{', '.join(tags)}]" if tags else "[]"
         print(f"{basename} {tags_display} {body_preview}")
@@ -219,6 +236,19 @@ def cmd_notes_delete(
         sys.exit(1)
 
 
+def _resolve_filename_from_history(args, file_ops: FileOperations) -> str:
+    """Resolve filename from hash argument or command history if empty."""
+    filename = args.hash
+    if not filename:
+        history = file_ops.get_history(limit=1)
+        if history and len(history) > 0:
+            last_cmd = history[0]
+            parts = file_ops._shlex.split(last_cmd)
+            if len(parts) >= 2:
+                filename = parts[-1]
+    return filename
+
+
 def cmd_notes_edit(
     args,
     file_ops: Optional[FileOperations] = None,
@@ -228,37 +258,22 @@ def cmd_notes_edit(
     if file_ops is None:
         file_ops = FileOperations()
     
-    # Get the filename from hash (hash is the basename without extension)
-    filename = args.hash
+    filename = _resolve_filename_from_history(args, file_ops)
     
-    # If no hash provided, get the last edited note from history
-    if not filename:
-        history = file_ops.get_history(limit=1)
-        if history and len(history) > 0:
-            last_cmd = history[0]
-            # Extract the hash from the command (last argument before editor path)
-            parts = file_ops._shlex.split(last_cmd)
-            if len(parts) >= 2:
-                filename = parts[-1]
-    
-    # Append extension if not present
     ext = config.get("storage", {}).get("extension", "jmd")
     if not filename.endswith(ext):
         filename = f"{filename}.{ext}"
     
-    # Look up the filepath in the database
     filepath = get_note_filepath(filename)
     
     if filepath is None:
         print(f"Error: Note with hash {args.hash} not found.", file=sys.stderr)
         sys.exit(1)
     
-    # Check if file exists on disk
     if not file_ops.exists(filepath):
         print(f"Error: File for hash {args.hash} could not be found on disk.", file=sys.stderr)
         sys.exit(1)
     
-    # Get editor command from config or use default
     editor_cmd = config.get("editor", {}).get("command") or _default_editor()
     
     try:
