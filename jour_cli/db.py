@@ -80,9 +80,18 @@ def get_notes_for_tag(tag):
         ).fetchall()
     return [row["filename"] for row in rows]
 
+def get_note_filepath(filename):
+    """Return the filepath for a note by its filename."""
+    with _get_conn() as conn:
+        row = conn.execute(
+            "SELECT filepath FROM notes WHERE filename = ?", (filename,)
+        ).fetchone()
+    if row is None:
+        return None
+    return row["filepath"]
+
 def delete_note(filename):
     """Delete a note record and associated tags."""
     with _get_conn() as conn:
         conn.execute("PRAGMA foreign_keys = ON")
         conn.execute("DELETE FROM notes WHERE filename = ?", (filename,))
-

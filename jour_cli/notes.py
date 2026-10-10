@@ -6,7 +6,7 @@ import subprocess
 import uuid
 from datetime import datetime
 from jour_cli.config import load_config, get_storage_path, _default_editor
-from jour_cli.db import index_note, delete_note
+from jour_cli.db import index_note, delete_note, get_note_filepath
 
 def cmd_notes_make(args):
     config = load_config()
@@ -120,4 +120,31 @@ def cmd_notes_delete(args):
         print(f"Note {args.hash} deleted.")
     else:
         print(f"Error: Note {args.hash} not found.", file=sys.stderr)
+        sys.exit(1)
+
+def cmd_notes_edit(args):
+    config = load_config()
+    
+    # Get the filename from hash (hash is the basename without extension)
+    filename = args.hash
+    
+    # Look up the filepath in the database
+    filepath = get_note_filepath(filename)
+    
+    if filepath is None:
+        print(f"Error: Note with hash {args.hash} not found.", file=sys.stderr)
+        sys.exit(1)
+    
+    # Check if file exists on disk
+    if not os.path.exists(filepath):
+        print(f"Error: File for hash {args.hash} could not be found on disk.", file=sys.stderr)
+        sys.exit(1)
+    
+    # Get editor command from config or use default
+    editor_cmd = config.get("editor", {}).get("command") or _default_editor()
+    
+    try:
+        subprocess.run(shlex.split(editor_cmd) + [filepath])
+    except Exception as e:
+        print(f"Error: Failed to launch editor: {e}", file=sys.stderr)
         sys.exit(1)
