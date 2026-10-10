@@ -1,7 +1,6 @@
 import typer
 from typing import Optional
 from jour_cli.notes import (
-    FileOperations,
     cmd_notes_make,
     cmd_notes_list,
     cmd_notes_cat,
