@@ -25,10 +25,18 @@ def cmd_notes_make(args):
     if getattr(args, "tag", None):
         tags = [t.strip() for t in args.tag.split(",") if t.strip()]
 
-    # Priority: --note flag > piped stdin > open editor
-    note_body = getattr(args, "note", None) or ""
-    if not note_body and not sys.stdin.isatty():
-        note_body = sys.stdin.read()
+    # Priority: --note flag > file argument > piped stdin > open editor
+    note_body = getattr(args, "note", None)
+    if not note_body:
+        file_arg = getattr(args, "file", None)
+        if file_arg:
+            with open(file_arg, "r") as f:
+                note_body = f.read()
+        elif not sys.stdin.isatty():
+            note_body = sys.stdin.read()
+            
+    if note_body is None:
+        note_body = ""
 
     content = f"""---
 layout: {layout}

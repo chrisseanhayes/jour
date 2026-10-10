@@ -12,6 +12,7 @@ def main():
     make_parser = notes_sub.add_parser("make")
     make_parser.add_argument("-n", "--note", default=None, help="Note body text")
     make_parser.add_argument("-t", "--tag", default=None, help="Comma-delimited tags")
+    make_parser.add_argument("file", nargs="?", default=None, help="Optional file to read note from")
     notes_sub.add_parser("list")
     
     tags_parser = subparsers.add_parser("tags")

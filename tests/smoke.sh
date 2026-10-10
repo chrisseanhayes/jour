@@ -158,6 +158,39 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# 14. input redirection (< file) and file argument
+# ---------------------------------------------------------------------------
+echo "\n[14] input redirection and file argument"
+echo "redirected body" > input_redir.txt
+jour notes make < input_redir.txt
+LATEST=$(ls -t ~/.jour/*.jmd | head -1)
+if grep -q "redirected body" "$LATEST"; then
+    pass "input redirection works via stdin"
+else
+    fail "input redirection failed"
+fi
+
+echo "file argument body" > input_arg.txt
+jour notes make input_arg.txt
+LATEST=$(ls -t ~/.jour/*.jmd | head -1)
+if grep -q "file argument body" "$LATEST"; then
+    pass "file argument works"
+else
+    fail "file argument failed"
+fi
+
+# ---------------------------------------------------------------------------
+# 15. output redirection (> file)
+# ---------------------------------------------------------------------------
+echo "\n[15] output redirection"
+jour notes list > output_redir.txt
+if grep -q "$(basename "$LATEST")" output_redir.txt; then
+    pass "output redirection works"
+else
+    fail "output redirection failed"
+fi
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 echo "\n================================"
