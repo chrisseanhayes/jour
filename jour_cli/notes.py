@@ -25,6 +25,10 @@ class FileOperations:
         self._sys_stdin = sys.stdin
         self._read_history = read_history
     
+    def basename(self, path: str) -> str:
+        """Get the base name of a path."""
+        return self._os.path.basename(path)
+    
     def makedirs(self, path: str, exist_ok: bool = True) -> None:
         """Create directory if it doesn't exist."""
         return self._os.makedirs(path, exist_ok=exist_ok)
