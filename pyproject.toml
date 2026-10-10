@@ -7,6 +7,7 @@ name = "jour-cli"
 version = "0.1.0"
 dependencies = [
     "PyYAML",
+    "typer",
 ]
 requires-python = ">=3.8"
 description = "Minimal CLI Journal"

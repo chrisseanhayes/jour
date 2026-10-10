@@ -1,6 +1,5 @@
 import typer
-from datetime import datetime
-from typing import Optional, List
+from typing import Optional
 from jour_cli.notes import cmd_notes_make, cmd_notes_list, cmd_notes_cat, cmd_notes_delete, cmd_notes_edit
 from jour_cli.tags import cmd_tags_list, cmd_tags_show
 from jour_cli.search import cmd_search
@@ -8,14 +7,14 @@ from jour_cli.logging import log_command, read_history
 
 app = typer.Typer(help="Minimal CLI Journal")
 
-@app.command()
-def notes(
-    ctx: typer.Context,
-):
-    """Manage journal notes."""
-    pass
+notes_app = typer.Typer(help="Manage journal notes.")
+tags_app = typer.Typer(help="Manage tags.")
 
-@app.command("notes", "make")
+app.add_typer(notes_app, name="notes")
+app.add_typer(tags_app, name="tags")
+
+
+@notes_app.command("make")
 def notes_make(
     note: Optional[str] = typer.Option(None, "-n", "--note", help="Note body text"),
     tag: Optional[str] = typer.Option(None, "-t", "--tag", help="Comma-delimited tags"),
@@ -30,14 +29,16 @@ def notes_make(
     log_command("notes make", args)
     cmd_notes_make(args)
 
-@app.command("notes", "list")
+
+@notes_app.command("list")
 def notes_list():
     """List all notes."""
     args = type('Args', (), {})()
     log_command("notes list", args)
     cmd_notes_list(args)
 
-@app.command("notes", "cat")
+
+@notes_app.command("cat")
 def notes_cat(
     hash: str = typer.Argument(..., help="Note hash"),
 ):
@@ -46,7 +47,8 @@ def notes_cat(
     log_command("notes cat", args)
     cmd_notes_cat(args)
 
-@app.command("notes", "delete")
+
+@notes_app.command("delete")
 def notes_delete(
     hash: str = typer.Argument(..., help="Note hash"),
 ):
@@ -55,7 +57,8 @@ def notes_delete(
     log_command("notes delete", args)
     cmd_notes_delete(args)
 
-@app.command("notes", "edit")
+
+@notes_app.command("edit")
 def notes_edit(
     hash: str = typer.Argument(..., help="Note hash"),
 ):
@@ -64,21 +67,16 @@ def notes_edit(
     log_command("notes edit", args)
     cmd_notes_edit(args)
 
-@app.command()
-def tags(
-    ctx: typer.Context,
-):
-    """Manage tags."""
-    pass
 
-@app.command("tags", "list")
+@tags_app.command("list")
 def tags_list():
     """List all tags."""
     args = type('Args', (), {})()
     log_command("tags list", args)
     cmd_tags_list(args)
 
-@app.command("tags", "show")
+
+@tags_app.command("show")
 def tags_show(
     tag: str = typer.Argument(..., help="Tag name"),
 ):
@@ -86,6 +84,7 @@ def tags_show(
     args = type('Args', (), {'tag': tag})()
     log_command("tags show", args)
     cmd_tags_show(args)
+
 
 @app.command()
 def search(
@@ -96,6 +95,7 @@ def search(
     log_command("search", args)
     cmd_search(args)
 
+
 @app.command()
 def history(
     count: int = typer.Option(20, "-n", "--count", help="Number of entries to show (default: 20)"),
@@ -105,5 +105,10 @@ def history(
     for entry in history_entries:
         print(entry)
 
-if __name__ == "__main__":
+
+def main():
     app()
+
+
+if __name__ == "__main__":
+    main()
