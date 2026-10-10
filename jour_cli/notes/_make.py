@@ -35,4 +35,6 @@ def cmd_notes_make(
 
     if not note_body:
         editor_cmd = config.get("editor", {}).get("command") or _default_editor()
+        if isinstance(editor_cmd, str):
+            editor_cmd = [editor_cmd]
         file_ops.run_command(editor_cmd + [filepath])
