@@ -6,13 +6,10 @@ from ..shared.file_ops import FileOperations, _resolve_note_body, _build_note_co
 
 def cmd_notes_make(
     args,
-    file_ops: Optional[FileOperations] = None,
+    file_ops: Optional[FileOperations] = FileOperations(),
 ):
     config = load_config()
     storage = get_storage_path(config)
-    
-    if file_ops is None:
-        file_ops = FileOperations()
     
     file_ops.makedirs(storage, exist_ok=True)
 

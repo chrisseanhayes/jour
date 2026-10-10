@@ -7,12 +7,9 @@ from ..shared.file_ops import FileOperations, _resolve_filename_from_history
 
 def cmd_notes_edit(
     args,
-    file_ops: Optional[FileOperations] = None,
+    file_ops: Optional[FileOperations] = FileOperations(),
 ):
     config = load_config()
-    
-    if file_ops is None:
-        file_ops = FileOperations()
     
     filename = _resolve_filename_from_history(args, file_ops)
     

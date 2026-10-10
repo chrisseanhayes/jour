@@ -5,14 +5,11 @@ from ..shared.file_ops import FileOperations, _parse_note_content, _get_body_pre
 
 def cmd_notes_list(
     args,
-    file_ops: Optional[FileOperations] = None,
+    file_ops: Optional[FileOperations] = FileOperations(),
 ):
     config = load_config()
     storage = get_storage_path(config)
     ext = config.get("storage", {}).get("extension", "jmd")
-    
-    if file_ops is None:
-        file_ops = FileOperations()
     
     files = file_ops.list_files(f"*.{ext}", storage)
     

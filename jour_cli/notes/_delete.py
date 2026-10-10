@@ -7,14 +7,11 @@ from ..shared.file_ops import FileOperations
 
 def cmd_notes_delete(
     args,
-    file_ops: Optional[FileOperations] = None,
+    file_ops: Optional[FileOperations] = FileOperations(),
 ):
     config = load_config()
     storage = get_storage_path(config)
     ext = config.get("storage", {}).get("extension", "jmd")
-    
-    if file_ops is None:
-        file_ops = FileOperations()
     
     filename = f"{args.hash}.{ext}"
     filepath = file_ops.join(storage, filename)
