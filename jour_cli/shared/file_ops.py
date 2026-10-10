@@ -9,7 +9,6 @@ from datetime import datetime
 from typing import Callable, Optional
 from jour_cli.config import load_config, get_storage_path, _default_editor
 from jour_cli.db import index_note, delete_note, get_note_filepath
-from jour_cli.logging import read_history
 
 
 class FileOperations:
@@ -24,7 +23,14 @@ class FileOperations:
         self._datetime = datetime
         self._open = open
         self._sys_stdin = sys.stdin
-        self._read_history = read_history
+    
+    def expanduser(self, path: str) -> str:
+        """Expand ~ to user home directory."""
+        return self._os.path.expanduser(path)
+
+    def path(self, path: str) -> str:
+        """Return the absolute path."""
+        return self._os.path.abspath(path)
     
     def basename(self, path: str) -> str:
         """Get the base name of a path."""
