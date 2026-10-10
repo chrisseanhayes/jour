@@ -27,4 +27,9 @@ podman run --rm "$IMAGE" sh tests/test_delete.sh
 echo "\n==> Checking history log for delete tests"
 podman run --rm "$IMAGE" sh -c 'cat ~/.jour/logs/history | grep -E "notes delete"' || echo "No commands logged (may be expected if no commands were run)"
 
+echo "\n==> Running history tests"
+podman run --rm "$IMAGE" sh tests/test_history.sh
+echo "\n==> Checking history log for history command"
+podman run --rm "$IMAGE" sh -c 'cat ~/.jour/logs/history | grep -E "history"' || echo "No commands logged (may be expected if no commands were run)"
+
 echo "\n==> All tests completed with log verification"
