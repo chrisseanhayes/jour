@@ -1,5 +1,5 @@
 import argparse
-from jour_cli.notes import cmd_notes_make, cmd_notes_list
+from jour_cli.notes import cmd_notes_make, cmd_notes_list, cmd_notes_cat
 from jour_cli.tags import cmd_tags_list, cmd_tags_show
 from jour_cli.search import cmd_search
 
@@ -14,6 +14,8 @@ def main():
     make_parser.add_argument("-t", "--tag", default=None, help="Comma-delimited tags")
     make_parser.add_argument("file", nargs="?", default=None, help="Optional file to read note from")
     notes_sub.add_parser("list")
+    cat_parser = notes_sub.add_parser("cat")
+    cat_parser.add_argument("hash")
     
     tags_parser = subparsers.add_parser("tags")
     tags_sub = tags_parser.add_subparsers(dest="action", required=True)
@@ -31,6 +33,8 @@ def main():
             cmd_notes_make(args)
         elif args.action == "list":
             cmd_notes_list(args)
+        elif args.action == "cat":
+            cmd_notes_cat(args)
     elif args.command == "tags":
         if args.action == "list":
             cmd_tags_list(args)

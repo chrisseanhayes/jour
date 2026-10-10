@@ -12,3 +12,6 @@ podman run --rm "$IMAGE" sh tests/smoke.sh
 
 echo "\n==> Running tag tests"
 podman run --rm "$IMAGE" sh tests/test_tags.sh
+
+echo "\n==> Running cat tests"
+podman run --rm "$IMAGE" sh tests/test_cat.sh

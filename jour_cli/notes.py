@@ -63,3 +63,16 @@ def cmd_notes_list(args):
     
     for f in sorted(glob.glob(os.path.join(storage, f"*.{ext}")), reverse=True):
         print(os.path.basename(f))
+
+def cmd_notes_cat(args):
+    config = load_config()
+    storage = get_storage_path(config)
+    ext = config.get("storage", {}).get("extension", "jmd")
+    
+    filepath = os.path.join(storage, f"{args.hash}.{ext}")
+    if os.path.exists(filepath):
+        with open(filepath, "r") as f:
+            print(f.read(), end="")
+    else:
+        print(f"Error: Note {args.hash} not found.", file=sys.stderr)
+        sys.exit(1)
