@@ -1,9 +1,10 @@
 import os
 import sys
 import glob
+import shlex
 import subprocess
 from datetime import datetime
-from src.config import load_config, get_storage_path
+from jour_cli.config import load_config, get_storage_path, _default_editor
 
 def cmd_notes_make(args):
     config = load_config()
@@ -39,8 +40,8 @@ tags: {tags}
         f.write(content)
 
     if not note_body:
-        editor = config.get("editor", {}).get("command", "open -t")
-        subprocess.run(f"{editor} {filepath}", shell=True)
+        editor_cmd = config.get("editor", {}).get("command") or _default_editor()
+        subprocess.run(shlex.split(editor_cmd) + [filepath])
 
 def cmd_notes_list(args):
     config = load_config()

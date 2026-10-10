@@ -1,7 +1,7 @@
 import argparse
-from src.notes import cmd_notes_make, cmd_notes_list
-from src.tags import cmd_tags_list, cmd_tags_show
-from src.search import cmd_search
+from jour_cli.notes import cmd_notes_make, cmd_notes_list
+from jour_cli.tags import cmd_tags_list, cmd_tags_show
+from jour_cli.search import cmd_search
 
 def main():
     parser = argparse.ArgumentParser(description="Minimal CLI Journal")

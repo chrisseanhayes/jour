@@ -1,7 +1,7 @@
 import os
 import glob
 import yaml
-from src.config import load_config, get_storage_path
+from jour_cli.config import load_config, get_storage_path
 
 def parse_front_matter_tags(filepath):
     with open(filepath, "r") as f:

@@ -1,8 +1,17 @@
 import os
+import sys
 import yaml
 
 JOUR_DIR = os.path.expanduser("~/.jour")
 CONFIG_PATH = os.path.join(JOUR_DIR, ".jourconfig")
+
+def _default_editor():
+    # Respect user's preferred editor env vars first
+    return (
+        os.environ.get("VISUAL")
+        or os.environ.get("EDITOR")
+        or ("open -t" if sys.platform == "darwin" else "xdg-open")
+    )
 
 DEFAULT_CONFIG = {
     "storage": {
@@ -10,7 +19,7 @@ DEFAULT_CONFIG = {
         "extension": "jmd"
     },
     "editor": {
-        "command": "open -t"
+        "command": None  # resolved at runtime via _default_editor()
     },
     "front_matter": {
         "layout": "default",
