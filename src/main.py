@@ -9,7 +9,9 @@ def main():
     
     notes_parser = subparsers.add_parser("notes")
     notes_sub = notes_parser.add_subparsers(dest="action", required=True)
-    notes_sub.add_parser("make")
+    make_parser = notes_sub.add_parser("make")
+    make_parser.add_argument("-n", "--note", default=None, help="Note body text")
+    make_parser.add_argument("-t", "--tag", default=None, help="Comma-delimited tags")
     notes_sub.add_parser("list")
     
     tags_parser = subparsers.add_parser("tags")
