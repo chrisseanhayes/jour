@@ -1,4 +1,5 @@
 from jour_cli.app_factory import AppFactory
+from ...shared.jmespath_query import query_notes
 from ...shared.note_content import _get_body_preview, _parse_note_content
 
 
@@ -6,10 +7,19 @@ def cmd_notes_list(args, app_factory: AppFactory):
     config = app_factory.get_config()
     note_store = app_factory.get_note_store(config)
 
-    for note in note_store.list():
+    notes = note_store.list()
+    visible_notes = []
+    for note in notes:
         if "jour-archive" in note.tags and not args.show_archived:
             continue
+        visible_notes.append(note)
 
+    query = getattr(args, "jmespath_query", None)
+    if query is not None:
+        app_factory.dependencies.write_stdout(query_notes(visible_notes, query))
+        return
+
+    for note in visible_notes:
         _, body = _parse_note_content(note.content)
         body_preview = _get_body_preview(body)
 

@@ -55,9 +55,17 @@ def notes_list(
     show_archived: bool = typer.Option(
         False, "--show-archived", help="Include notes tagged 'jour-archive'"
     ),
+    jmespath_query: Optional[str] = typer.Option(
+        None, "-q", "--query", help="Apply a JMESPath query and output JSON"
+    ),
 ):
     """List notes, excluding those tagged 'jour-archive' by default."""
-    run_cmd("notes list", cmd_notes_list, show_archived=show_archived)
+    run_cmd(
+        "notes list",
+        cmd_notes_list,
+        show_archived=show_archived,
+        jmespath_query=jmespath_query,
+    )
 
 
 @notes_app.command("archive")
@@ -98,9 +106,12 @@ def notes_edit(
 @app.command()
 def search(
     query: str = typer.Argument(..., help="Search query"),
+    jmespath_query: Optional[str] = typer.Option(
+        None, "-q", "--query", help="Apply a JMESPath query and output JSON"
+    ),
 ):
     """Search notes."""
-    run_cmd("search", cmd_search, query=query)
+    run_cmd("search", cmd_search, query=query, jmespath_query=jmespath_query)
 
 
 @app.command()

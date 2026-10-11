@@ -5,7 +5,7 @@ A minimal, fast, command-line journaling tool written in Python.
 ## Features
 
 - **`jour notes make`**: Create a new note. You can pass the note body directly via the `-n`/`--note` flag, pipe it via stdin (e.g., `cat file.txt | jour notes make`), or simply run the command to open your default editor (`$VISUAL` or `$EDITOR`). Empty note bodies are not saved; an empty note left in the editor is discarded.
-- **`jour notes list`**: Display notes, sorted chronologically, with their hash, applied tags, and a brief content preview. Notes tagged `jour-archive` are hidden by default; use `jour notes list --show-archived` to include them.
+- **`jour notes list`**: Display notes, sorted chronologically, with their hash, applied tags, and a brief content preview. Notes tagged `jour-archive` are hidden by default; use `jour notes list --show-archived` to include them. Use `-q`/`--query` with a JMESPath expression to query structured note records (`id`, `tags`, `content`, and parsed `body`); query results are emitted as JSON.
 - **`jour notes archive <hash>`**: Tag a note with `jour-archive` so it is hidden from `notes list` by default. Use `jour notes archive --undo <hash>` to remove that tag and restore the note to the default list. The note's other tags and front-matter fields are preserved.
 - **`jour notes cat <hash>`**: View the full content and YAML front matter of a specific note by its hash identifier (the extension-free ID shown by `notes list`).
 - **`jour notes delete <hash>`**: Delete a specific note from your storage and the tag index.
@@ -14,7 +14,7 @@ A minimal, fast, command-line journaling tool written in Python.
 - **Hashtag tags**: Whole-word hashtags in note bodies (for example `#helloworld` or `#this-great-day`) are indexed as tags without the leading `#`, alongside tags supplied with `--tag`.
 - **`jour tags list`**: List all tags used across your notes. The local SQLite index is refreshed from note files before tag queries, so tags added by editors that return before saving are included.
 - **`jour tags show <tag>`**: Show all notes associated with a specific tag.
-- **`jour search <query>`**: Fast, grep-based full-text search across all your journal entries.
+- **`jour search <query>`**: Fast, grep-based full-text search across all your journal entries. Use `-q`/`--query` to apply a JMESPath expression to the matching structured note records and emit the result as JSON.
 
 ## Storage & Architecture
 

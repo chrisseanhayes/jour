@@ -1,3 +1,4 @@
+import json
 import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock
@@ -37,6 +38,18 @@ class NotesListTests(unittest.TestCase):
         self.assertEqual(len(output), 2)
         self.assertIn("archived", output[0])
         self.assertIn("active", output[1])
+
+    def test_jmespath_query_receives_visible_structured_notes(self):
+        cmd_notes_list(
+            SimpleNamespace(
+                show_archived=False,
+                jmespath_query="[?contains(body, 'active')].{id: id, tags: tags}",
+            ),
+            self.app_factory,
+        )
+
+        output = self.app_factory.dependencies.write_stdout.call_args.args[0]
+        self.assertEqual(json.loads(output), [{"id": "active", "tags": ["archive"]}])
 
 
 if __name__ == "__main__":

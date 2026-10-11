@@ -6,6 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "jour-cli"
 version = "0.1.0"
 dependencies = [
+    "jmespath",
     "PyYAML",
     "typer",
 ]
