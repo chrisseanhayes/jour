@@ -1,62 +1,76 @@
-# jour — Minimal CLI Journal
+Here is an improved, streamlined version of the README designed to be clear, direct, and easy to scan.
 
-A minimal, fast, command-line journaling tool written in Python.
+---
 
-☕️ [Buy me a coffee](https://www.buymeacoffee.com/hayescs4) 💸
+# jour
 
-> **Alpha software:** Jour is still in active development. Commands, configuration, and storage formats may change between releases.
+A fast, minimal command-line journaling tool written in Python[cite: 1].
+
+☕️ [Buy me a coffee](https://www.google.com/search?q=https://www.buymeacoffee.com/hayescs4)[cite: 1]
+
+> **Alpha software:** `jour` is in active development. Commands, configuration, and storage formats may change between releases[cite: 1].
+
+---
 
 ## Installation
 
-The CLI requires `pipx` for a clean, isolated installation without breaking system Python packages.
+Requires `pipx` for clean, isolated installation without modifying system Python packages[cite: 1].
 
-To install or update the tool:
 ```bash
 ./install.sh
-```
-This script will check for `pipx` (installing it via Homebrew if missing), and then install `jour` into `~/.local/bin`. Ensure that directory is in your `$PATH`.
 
-## Features
-
-- **`jour make`**: Create a new note. You can pass the note body directly via the `-n`/`--note` flag, pipe it via stdin (e.g., `cat file.txt | jour make`), or simply run the command to open your default editor (`$VISUAL` or `$EDITOR`). Empty note bodies are not saved; an empty note left in the editor is discarded.
-- **`jour list`**: Display notes, sorted chronologically, with their hash, applied tags, and a brief content preview. Notes tagged `jour-archive` are hidden by default; use `jour list --show-archived` to include them. Use `-q`/`--query` with a JMESPath expression to query structured note records (`id`, `tags`, `content`, and parsed `body`); query results are emitted as JSON.
-- **`jour archive <hash>`**: Tag a note with `jour-archive` so it is hidden from `list` by default. Use `jour archive --undo <hash>` to remove that tag and restore the note to the default list. The note's other tags and front-matter fields are preserved.
-- **`jour cat <hash>`**: View the full content and YAML front matter of a specific note by its hash identifier (the extension-free ID shown by `list`).
-- **`jour delete <hash>`**: Delete a specific note from your storage and the tag index.
-- **`jour edit <hash>`**: Open a specific journal entry for editing in the system's default editor. The editor is determined by your configuration or falls back to the system default (e.g., `vi` or `nano`). If the body is cleared, you are asked to confirm deletion; declining restores the previous note.
-- **Compatibility**: The original `jour notes make/list/archive/cat/delete/edit` command forms remain available as aliases.
-- **`jour prune`**: Delete all notes with empty bodies, including notes created before empty-note checks were added.
-- **Hashtag tags**: Whole-word hashtags in note bodies (for example `#helloworld` or `#this-great-day`) are indexed as tags without the leading `#`, alongside tags supplied with `--tag`.
-- **`jour tags list`**: List all tags used across your notes. The local SQLite index is refreshed from note files before tag queries, so tags added by editors that return before saving are included.
-- **`jour tags show <tag>`**: Show all notes associated with a specific tag.
-- **Repo-local journals**: The first interactive note-related command in a Git repository asks whether to use `./.jour` for that repository. Answering no records the repository in `~/.jour/.jourignore` and uses the global journal. Non-interactive commands use the global journal unless repo-local storage already exists. Use `jour -g <command>` to explicitly use global data from a repository.
-- **`jour init`**: Initialize repo-local storage and its tag index explicitly without a prompt. This must be run inside a Git repository; it also removes that repository from `~/.jour/.jourignore` if present.
-
-## Storage & Architecture
-
-- **Replaceable note storage**: Commands use the `NoteStore` CRUD interface rather than performing note persistence themselves. The default `FileSystemNoteStore` keeps notes as flat files (`~/.jour/*.jmd`) with YAML front matter; note-store, editor, configuration, and dependency factories are wired at the CLI composition root and can be replaced in tests.
-- **Robust identifiers**: Notes are identified by the extension-free ID shown by `jour list`, based on a chronological prefix and UUID suffix (`{YYYYmmddHHMMSS}_{8-char uuid hex}`). The filesystem backend adds the configured extension when storing notes.
-- **SQLite Tag Index**: The default filesystem store maintains tag queries (`tags list` and `tags show`) in the lightweight SQLite index (`~/.jour/jour.db`). Its location can be changed with `database.path` in `~/.jour/.jourconfig`.
-- **Storage scope**: Repo-local notes and their SQLite tag index are stored together in `./.jour`. Add `.jour/` to the repository's `.gitignore` to keep journal content out of commits. `~/.jour/.jourignore` contains absolute repository paths that should always use global data.
-- **Code organization**: Command handlers and CLI wiring live in `jour_cli/cmd/`; storage interfaces and implementations live in `jour_cli/storage/`; command history is in `jour_cli/history.py`; app configuration remains in `jour_cli/config.py`. Loading configuration does not initialize the tag-index database.
-- **Testing**: Testing is performed inside fresh Podman containers to ensure total environment isolation from the host machine, matching the project's strict dependency rules.
-
-## Uninstallation
-
-To remove the CLI:
-```bash
-./uninstall.sh
 ```
 
-If you also wish to permanently wipe all of your journal notes, tags, and database configurations, pass the removal flag:
-```bash
-./uninstall.sh --remove-all-data
-```
+This script checks for `pipx` (installing it via Homebrew if missing), installs `jour` to `~/.local/bin`, and requires that directory to be in your `$PATH`[cite: 1].
+
+---
+
+## Commands
+
+* **`jour make`**: Create a new note[cite: 1]. Pass text via `-n`/`--note`, pipe via stdin (`cat file.txt | jour make`), or open your default editor (`$VISUAL` or `$EDITOR`)[cite: 1]. Empty bodies are discarded[cite: 1].
+* **`jour list`**: Display notes chronologically with hash, tags, and content preview[cite: 1]. Add `--show-archived` to include archived notes, or use `-q`/`--query` with a JMESPath expression to output structured records as JSON[cite: 1].
+* **`jour archive <hash>`**: Hide a note from default lists by tagging it `jour-archive`[cite: 1]. Use `jour archive --undo <hash>` to restore it[cite: 1].
+* **`jour cat <hash>`**: View full note content and YAML front matter[cite: 1].
+* **`jour edit <hash>`**: Open a note for editing[cite: 1]. Clearing the body prompts for deletion confirmation[cite: 1].
+* **`jour delete <hash>`**: Permanently delete a note and remove it from the tag index[cite: 1].
+* **`jour prune`**: Delete all notes with empty bodies[cite: 1].
+* **`jour init`**: Explicitly initialize repo-local storage and its tag index inside a Git repository[cite: 1].
+* **`jour tags list`**: List all tags used across your notes[cite: 1].
+* **`jour tags show <tag>`**: Display all notes associated with a specific tag[cite: 1].
+
+---
+
+## Configuration & Storage
+
+* **File Storage**: Flat files (`~/.jour/*.jmd`) with YAML front matter[cite: 1].
+* **Identifiers**: Chronological prefix with a UUID suffix (`{YYYYmmddHHMMSS}_{8-char uuid hex}`)[cite: 1].
+* **Tag Index**: Lightweight SQLite database (`~/.jour/jour.db`)[cite: 1]. Location is configurable via `database.path` in `~/.jour/.jourconfig`[cite: 1].
+* **Repo-Local Journals**: Interactive commands prompt to use `./.jour` inside Git repositories[cite: 1]. Answering no adds the path to `~/.jour/.jourignore`[cite: 1]. Use `jour -g` to force global storage from inside a repo[cite: 1].
+* **Aliases**: Legacy `jour notes make/list/archive/cat/delete/edit` commands remain supported[cite: 1].
+
+---
 
 ## Testing
 
-Testing is exclusively executed inside Podman containers. We do not install dependencies or execute test suites directly on the host machine to guarantee pristine environment isolation.
+Tests run inside Podman containers to maintain strict environment isolation from the host[cite: 1].
 
-To build the container image and execute the test suites (smoke, tags, cat, delete):
 ```bash
 ./podman-test.sh
+
+```
+
+---
+
+## Uninstallation
+
+```bash
+./uninstall.sh
+
+```
+
+To permanently wipe all notes, tags, and database configurations:
+
+```bash
+./uninstall.sh --remove-all-data
+
+```
