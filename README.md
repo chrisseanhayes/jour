@@ -45,6 +45,7 @@ This script checks for `pipx` (installing it via Homebrew if missing), installs 
 * **`jour archive <hash>`**: Hide a note from default lists by tagging it `jour-archive`. Use `jour archive --undo <hash>` to restore it.
 * **`jour cat <hash>`**: View full note content and YAML front matter.
 * **`jour edit <hash>`**: Open a note for editing. Clearing the body prompts for deletion confirmation.
+* **`jour add-kvp -k <key> -v <value> <hash>`**: Add or replace a string key/value pair in a note's front matter. KVP data remains available to JMESPath queries.
 * **`jour delete <hash>`**: Permanently delete a note and remove it from the index.
 * **`jour prune`**: Delete all notes with empty bodies.
 * **`jour rebuild`**: Rebuild the tag and key/value indexes from the current note files, removing entries for notes that were deleted outside Jour.

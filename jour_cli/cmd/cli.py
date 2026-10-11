@@ -11,6 +11,7 @@ from jour_cli.shared.dependencies import DefaultDependenciesFactory
 from jour_cli.shared.editor import get_editor
 from jour_cli.storage.factory import FileSystemNoteStoreFactory
 from jour_cli.cmd.archive import archive_note
+from jour_cli.cmd.add_kvp import add_kvp
 from jour_cli.cmd.cat import cat_note
 from jour_cli.cmd.delete import delete_note
 from jour_cli.cmd.edit import edit_note
@@ -143,6 +144,16 @@ def notes_edit(
 ):
     """Edit a note by hash."""
     run_cmd("notes edit", edit_note, hash=hash)
+
+
+@app.command("add-kvp")
+def add_note_kvp(
+    key: str = typer.Option(..., "-k", "--key", help="KVP key"),
+    value: str = typer.Option(..., "-v", "--value", help="KVP value"),
+    hash: str = typer.Argument(..., help="Note hash"),
+):
+    """Add or replace a string key/value pair on a note."""
+    run_cmd("add-kvp", add_kvp, key=key, value=value, hash=hash)
 
 
 # Keep the original grouped commands available while exposing the common

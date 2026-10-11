@@ -146,6 +146,30 @@ def _add_front_matter_tag(content: str, tag: str) -> str:
     return f"---\ntags:\n- {tag}\n---\n{content}"
 
 
+def _add_front_matter_kvp(content: str, key: str, value: str) -> str:
+    """Add or replace a string-valued KVP while preserving note content."""
+    parts = content.split("---", 2)
+    if len(parts) >= 3:
+        try:
+            front_matter = yaml.safe_load(parts[1]) or {}
+        except yaml.YAMLError as error:
+            raise ValueError(f"Invalid note front matter: {error}") from error
+        if not isinstance(front_matter, dict):
+            raise ValueError("Note front matter must be a mapping.")
+        kvp = _parse_note_kvp(content)
+        kvp[key] = value
+        front_matter["kvp"] = kvp
+        serialized_front_matter = yaml.safe_dump(
+            front_matter, sort_keys=False, allow_unicode=True
+        ).rstrip()
+        return f"{parts[0]}---\n{serialized_front_matter}\n---{parts[2]}"
+
+    serialized_front_matter = yaml.safe_dump(
+        {"kvp": {key: value}}, sort_keys=False, allow_unicode=True
+    ).rstrip()
+    return f"---\n{serialized_front_matter}\n---\n{content}"
+
+
 def _remove_front_matter_tag(content: str, tag: str) -> str:
     """Remove a tag from note front matter while preserving its body and metadata."""
     parts = content.split("---", 2)

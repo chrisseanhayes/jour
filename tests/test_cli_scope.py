@@ -53,6 +53,22 @@ class CliScopeTests(unittest.TestCase):
         note_store.rebuild_tag_index.assert_called_once_with()
         stdout.assert_called_once_with("Rebuilt note index for 0 note(s).")
 
+    def test_add_kvp_command_is_registered(self):
+        runner = CliRunner()
+        with patch.object(cli.app_factory, "log_command"):
+            with patch.object(cli, "add_kvp") as add_kvp:
+                result = runner.invoke(
+                    cli.app,
+                    ["add-kvp", "-k", "project", "-v", "jour", "note-id"],
+                )
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        add_kvp.assert_called_once()
+        args = add_kvp.call_args.kwargs["args"]
+        self.assertEqual(args.key, "project")
+        self.assertEqual(args.value, "jour")
+        self.assertEqual(args.hash, "note-id")
+
     def test_index_status_command_is_registered(self):
         runner = CliRunner()
         with patch.object(cli.app_factory, "log_command"):

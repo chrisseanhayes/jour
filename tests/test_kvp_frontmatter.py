@@ -6,7 +6,7 @@ import unittest
 
 from jour_cli.shared.dependencies import Dependencies
 from jour_cli.shared.jmespath_query import query_notes
-from jour_cli.shared.note_content import _parse_note_kvp
+from jour_cli.shared.note_content import _add_front_matter_kvp, _parse_note_kvp
 from jour_cli.storage.filesystem_note_store import FileSystemNoteStore
 from jour_cli.storage.sqlite_tag_index import SQLiteTagIndex
 
@@ -47,6 +47,60 @@ class KvpFrontMatterTests(unittest.TestCase):
                 content = f"---\nkvp: {kvp}\n---\n\nNote body"
                 with self.assertRaises(ValueError):
                     _parse_note_kvp(content)
+
+    def test_add_front_matter_kvp_preserves_existing_metadata_and_body(self):
+        content = (
+            "---\nlayout: daily\ntags:\n  - work\nkvp:\n  existing: 3\n"
+            "---\n\nNote body"
+        )
+
+        updated = _add_front_matter_kvp(content, "project", "jour")
+
+        self.assertEqual(
+            _parse_note_kvp(updated),
+            {"existing": 3, "project": "jour"},
+        )
+        self.assertIn("layout: daily", updated)
+        self.assertIn("- work", updated)
+        self.assertTrue(updated.endswith("\n\nNote body"))
+
+    def test_add_front_matter_kvp_replaces_existing_key_and_handles_plain_notes(self):
+        updated = _add_front_matter_kvp(
+            "---\nkvp:\n  project: old\n---\n\nNote body",
+            "project",
+            "jour",
+        )
+        self.assertEqual(_parse_note_kvp(updated), {"project": "jour"})
+
+        plain_note = _add_front_matter_kvp("Note body", "project", "jour")
+        self.assertEqual(_parse_note_kvp(plain_note), {"project": "jour"})
+        self.assertTrue(plain_note.endswith("Note body"))
+
+    def test_add_kvp_command_updates_persisted_and_queryable_metadata(self):
+        from types import SimpleNamespace
+
+        from jour_cli.cmd.add_kvp import add_kvp
+
+        note_id = self.note_store.create("Note body", [])
+        app_factory = SimpleNamespace(
+            get_config=lambda: {},
+            dependencies=self.dependencies,
+            get_note_store=lambda _config: self.note_store,
+        )
+
+        add_kvp(
+            SimpleNamespace(hash=note_id, key="project", value="jour"),
+            app_factory,
+        )
+
+        note = self.note_store.list()[0]
+        self.assertEqual(note.kvp, {"project": "jour"})
+        self.assertEqual(
+            json.loads(
+                query_notes([note], "[?kvp.project == 'jour'].id")
+            ),
+            [note_id],
+        )
 
     def test_kvp_is_persisted_and_exposed_to_jmespath(self):
         content = (
