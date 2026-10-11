@@ -1,6 +1,7 @@
-import ast
 import re
 from typing import List, Tuple
+
+import yaml
 
 
 _HASHTAG_PATTERN = re.compile(r"(?<![\w#])#([\w]+(?:-[\w]+)*)(?![\w-])")
@@ -35,15 +36,21 @@ def _parse_note_content(content: str) -> Tuple[List[str], str]:
     tags = []
     body = ""
     if len(parts) >= 3:
-        front_matter = parts[1]
+        front_matter = yaml.safe_load(parts[1]) or {}
+        if not isinstance(front_matter, dict):
+            raise ValueError("Note front matter must be a mapping.")
         body = parts[2].strip()
-        for line in front_matter.split("\n"):
-            if line.startswith("tags: "):
-                tags_str = line[len("tags: "):].strip()
-                try:
-                    tags = ast.literal_eval(tags_str)
-                except:
-                    pass
+        front_matter_tags = front_matter.get("tags", [])
+        if front_matter_tags is None:
+            tags = []
+        elif isinstance(front_matter_tags, str):
+            tags = [front_matter_tags]
+        elif isinstance(front_matter_tags, list):
+            if not all(isinstance(tag, str) for tag in front_matter_tags):
+                raise ValueError("Front matter tags must be strings.")
+            tags = front_matter_tags
+        else:
+            raise ValueError("Front matter tags must be a string or list of strings.")
     else:
         body = content.strip()
     return list(dict.fromkeys(tags + _extract_hashtags(body))), body

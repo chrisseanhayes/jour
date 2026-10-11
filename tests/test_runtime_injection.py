@@ -214,13 +214,21 @@ class RuntimeInjectionTests(unittest.TestCase):
                 tag_index=tag_index,
             )
             note_id = note_store.create(
-                "---\ntags: ['front-matter-tag']\n---\n\nBody with #body-tag",
-                ["front-matter-tag", "body-tag"],
+                "---\ntags:\n  - front-matter-tag\n  - another-front-matter-tag\n"
+                "---\n\nBody with #body-tag",
+                [],
             )
 
             note = note_store.list()[0]
             self.assertEqual(note.id, note_id)
-            self.assertEqual(note.tags, ["front-matter-tag", "body-tag"])
+            self.assertEqual(
+                note.tags,
+                [
+                    "front-matter-tag",
+                    "another-front-matter-tag",
+                    "body-tag",
+                ],
+            )
 
     def test_edit_indexes_hashtags_from_saved_note_content(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -241,13 +249,22 @@ class RuntimeInjectionTests(unittest.TestCase):
             editor = Mock(spec=Editor)
             editor.open.side_effect = lambda filepath: dependencies.write_file(
                 filepath,
-                "---\ntags: []\n---\n\nEdited with #edited-tag",
+                "---\ntags:\n  - edited-front-matter-tag\n"
+                "  - another-edited-tag\n---\n\nEdited with #edited-tag",
             )
 
             self.assertTrue(note_store.edit(note_id, editor))
 
             self.assertEqual(
-                tag_index.notes_for_tag("edited-tag"),
+                note_store.list()[0].tags,
+                [
+                    "edited-front-matter-tag",
+                    "another-edited-tag",
+                    "edited-tag",
+                ],
+            )
+            self.assertEqual(
+                tag_index.notes_for_tag("edited-front-matter-tag"),
                 [f"{note_id}.jmd"],
             )
 

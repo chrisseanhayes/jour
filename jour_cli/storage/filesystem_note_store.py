@@ -23,13 +23,15 @@ class FileSystemNoteStore(NoteStore):
         self.tag_index = tag_index
 
     def create(self, content: str, tags: List[str]) -> str:
+        parsed_tags, _ = _parse_note_content(content)
+        all_tags = list(dict.fromkeys(tags + parsed_tags))
         self.dependencies.makedirs(self.storage, exist_ok=True)
         timestamp = self.dependencies.now().strftime("%Y%m%d%H%M%S")
         uid = self.dependencies.new_uuid_hex()[:8]
         note_id = f"{timestamp}_{uid}"
         filepath = self._filepath(note_id)
         self.dependencies.write_file(filepath, content)
-        self.tag_index.index_note(filepath, tags)
+        self.tag_index.index_note(filepath, all_tags)
         return note_id
 
     def get(self, note_id: str) -> Optional[str]:
