@@ -8,6 +8,22 @@ A fast, minimal command-line journaling tool written in Python.
 
 ---
 
+## Demo
+
+Open an interactive shell with the CLI in a Podman container and an isolated,
+persistent demo journal:
+
+```bash
+./demo.sh
+```
+
+The script builds the image and opens a shell where you can run `jour` commands.
+Each container gets a unique name, and demo data persists in the
+`jour-demo-data` Podman volume between runs. `nano` is configured as the
+container's editor, so `jour make` opens an interactive note editor.
+
+---
+
 ## Installation
 
 Requires `pipx` for clean, isolated installation without modifying system Python packages.

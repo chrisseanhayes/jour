@@ -3,6 +3,7 @@ FROM ubuntu:24.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    nano \
     python3 \
     python3-pip \
     python3-venv \
@@ -20,6 +21,7 @@ RUN python3 -m venv /opt/jour-venv \
     && /opt/jour-venv/bin/pip install -e .
 
 ENV PATH="/opt/jour-venv/bin:$PATH"
+ENV EDITOR="nano"
 
 # Copy test suite
 COPY tests/ ./tests/
