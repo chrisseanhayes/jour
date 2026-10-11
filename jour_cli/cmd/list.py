@@ -1,3 +1,5 @@
+import jmespath
+
 from jour_cli.app_factory import AppFactory
 from jour_cli.shared.jmespath_query import query_notes
 from jour_cli.shared.note_content import _get_body_preview, _parse_note_content
@@ -16,7 +18,15 @@ def list_notes(args, app_factory: AppFactory):
 
     query = getattr(args, "jmespath_query", None)
     if query is not None:
-        app_factory.dependencies.write_stdout(query_notes(visible_notes, query))
+        try:
+            result = query_notes(visible_notes, query)
+        except jmespath.exceptions.JMESPathError as error:
+            app_factory.dependencies.write_stderr(
+                f"Error: Invalid JMESPath query: {error}"
+            )
+            app_factory.dependencies.exit(1)
+            return
+        app_factory.dependencies.write_stdout(result)
         return
 
     for note in visible_notes:

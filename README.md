@@ -40,8 +40,8 @@ This script checks for `pipx` (installing it via Homebrew if missing), installs 
 ## Commands
 
 * **`jour --version`**: Display the installed Jour version.
-* **`jour make`**: Create a new note. Pass text via `-n`/`--note`, pipe via stdin (`cat file.txt | jour make`), or open your default editor (`$VISUAL` or `$EDITOR`). Empty bodies are discarded.
-* **`jour list`**: Display notes chronologically with hash, tags, and content preview. Add `--show-archived` to include archived notes, or use `-q`/`--query` with a JMESPath expression to output structured records as JSON.
+* **`jour make`**: Create a new Markdown note by default. Pass text via `-n`/`--note`, pipe via stdin (`cat file.txt | jour make`), or open your default editor (`$VISUAL` or `$EDITOR`). Use `--type json` to create a JSON document note in the `.jmd` body; its YAML front matter records `type: json`. JSON note bodies must be valid JSON objects. Empty Markdown bodies are discarded.
+* **`jour list`**: Display notes chronologically with hash, tags, and content preview. Add `--show-archived` to include notes tagged `jour-archive`, or use `-q`/`--query` with a JMESPath expression to output structured records as JSON. Query records include `type` (`markdown` or `json`) and `data` (the parsed JSON object for JSON notes, otherwise `null`). JSON document fields are also available at the record root for direct JMESPath filtering.
 * **`jour archive <hash>`**: Hide a note from default lists by tagging it `jour-archive`. Use `jour archive --undo <hash>` to restore it.
 * **`jour cat <hash>`**: View full note content and YAML front matter.
 * **`jour edit <hash>`**: Open a note for editing. Clearing the body prompts for deletion confirmation.

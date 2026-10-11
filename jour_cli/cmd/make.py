@@ -3,6 +3,7 @@ from jour_cli.shared.note_content import (
     _build_note_content,
     _extract_hashtags,
     _has_note_body,
+    _parse_json_note_data,
 )
 from jour_cli.shared.note_input import _resolve_note_input
 
@@ -28,7 +29,15 @@ def make_note(args, app_factory: AppFactory):
         return
 
     tags = list(dict.fromkeys(tags + _extract_hashtags(note_body)))
-    content = _build_note_content(layout, date_str, tags, note_body)
+    note_type = getattr(args, "note_type", "markdown")
+    if should_open_editor and note_type == "json":
+        note_body = "{}"
+    content = _build_note_content(layout, date_str, tags, note_body, note_type)
+    try:
+        _parse_json_note_data(content)
+    except ValueError as error:
+        dependencies.write_stderr(f"Error: Invalid JSON note: {error}")
+        dependencies.exit(1)
     note_id = note_store.create(content, tags)
 
     if should_open_editor:
@@ -43,4 +52,16 @@ def make_note(args, app_factory: AppFactory):
                 dependencies.write_stderr(
                     f"Error: Note {note_id} could not be removed."
                 )
+                dependencies.exit(1)
+        else:
+            try:
+                _parse_json_note_data(edited_content)
+            except ValueError as error:
+                if not note_store.delete(note_id):
+                    dependencies.write_stderr(
+                        f"Error: Invalid JSON note: {error}. "
+                        f"Note {note_id} could not be removed."
+                    )
+                else:
+                    dependencies.write_stderr(f"Error: Invalid JSON note: {error}")
                 dependencies.exit(1)

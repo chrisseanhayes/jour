@@ -1,5 +1,5 @@
 from jour_cli.app_factory import AppFactory
-from jour_cli.shared.note_content import _has_note_body
+from jour_cli.shared.note_content import _has_note_body, _parse_json_note_data
 from jour_cli.shared.note_input import _resolve_filename_from_history
 
 
@@ -29,6 +29,19 @@ def edit_note(args, app_factory: AppFactory):
                 "Hint: If this note was deleted outside Jour, run `jour rebuild` to "
                 "refresh the tag index."
             )
+            dependencies.exit(1)
+        try:
+            _parse_json_note_data(edited_content)
+        except ValueError as error:
+            if original_content is None or not note_store.update(
+                note_id, original_content
+            ):
+                dependencies.write_stderr(
+                    f"Error: Invalid JSON note: {error}. "
+                    f"Note {note_id} could not be restored."
+                )
+            else:
+                dependencies.write_stderr(f"Error: Invalid JSON note: {error}")
             dependencies.exit(1)
         if not _has_note_body(edited_content):
             if dependencies.confirm(

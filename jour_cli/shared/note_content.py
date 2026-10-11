@@ -1,10 +1,15 @@
+import json
 import re
-from typing import List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import yaml
 
 
 _HASHTAG_PATTERN = re.compile(r"(?<![\w#])#([\w]+(?:-[\w]+)*)(?![\w-])")
+
+
+def _reject_json_constant(value: str) -> None:
+    raise ValueError(f"Invalid JSON constant: {value}")
 
 
 def _extract_hashtags(text: str) -> List[str]:
@@ -17,17 +22,46 @@ def _build_note_content(
     date_str: str,
     tags: List[str],
     note_body: str,
+    note_type: str = "markdown",
 ) -> str:
     """Construct the markdown content with YAML front matter."""
+    if note_type not in ("markdown", "json"):
+        raise ValueError("Note type must be 'markdown' or 'json'.")
+    type_metadata = "type: json\n" if note_type == "json" else ""
     return f"""---
 layout: {layout}
 title: "{date_str}"
 date: {date_str}
-tags: {tags}
+{type_metadata}tags: {tags}
 ---
 
 {note_body}
 """
+
+
+def _get_note_type(content: str) -> str:
+    """Return a note's declared type, treating untyped notes as Markdown."""
+    parts = content.split("---", 2)
+    if len(parts) < 3:
+        return "markdown"
+    front_matter = yaml.safe_load(parts[1]) or {}
+    if not isinstance(front_matter, dict):
+        raise ValueError("Note front matter must be a mapping.")
+    note_type = front_matter.get("type", "markdown")
+    if not isinstance(note_type, str):
+        raise ValueError("Front matter type must be a string.")
+    return note_type
+
+
+def _parse_json_note_data(content: str) -> Optional[Dict[str, Any]]:
+    """Parse a JSON note body, requiring its top-level value to be an object."""
+    if _get_note_type(content) != "json":
+        return None
+    _, body = _parse_note_content(content)
+    data = json.loads(body, parse_constant=_reject_json_constant)
+    if not isinstance(data, dict):
+        raise ValueError("JSON note body must be a JSON object.")
+    return data
 
 
 def _parse_note_content(content: str) -> Tuple[List[str], str]:

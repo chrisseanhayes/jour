@@ -51,6 +51,24 @@ class NotesListTests(unittest.TestCase):
         output = self.app_factory.dependencies.write_stdout.call_args.args[0]
         self.assertEqual(json.loads(output), [{"id": "active", "tags": ["archive"]}])
 
+    def test_invalid_jmespath_query_reports_error_without_traceback(self):
+        self.app_factory.dependencies.exit.side_effect = SystemExit
+
+        with self.assertRaises(SystemExit):
+            list_notes(
+                SimpleNamespace(
+                    show_archived=False,
+                    jmespath_query="[?unknown-function(body)]",
+                ),
+                self.app_factory,
+            )
+
+        self.app_factory.dependencies.write_stdout.assert_not_called()
+        error = self.app_factory.dependencies.write_stderr.call_args.args[0]
+        self.assertIn("Error: Invalid JMESPath query:", error)
+        self.assertNotIn("Traceback", error)
+        self.app_factory.dependencies.exit.assert_called_once_with(1)
+
 
 if __name__ == "__main__":
     unittest.main()

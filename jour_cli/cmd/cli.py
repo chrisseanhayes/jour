@@ -1,5 +1,6 @@
 import sqlite3
 from importlib.metadata import version as package_version
+from enum import Enum
 from typing import Any, Callable, Optional
 
 import typer
@@ -32,6 +33,11 @@ app_factory = AppFactory(
 )
 app.add_typer(notes_app, name="notes")
 app.add_typer(tags_app, name="tags")
+
+
+class NoteType(str, Enum):
+    MARKDOWN = "markdown"
+    JSON = "json"
 
 
 def version_callback(value: bool) -> None:
@@ -69,9 +75,21 @@ def notes_make(
     note: Optional[str] = typer.Option(None, "-n", "--note", help="Note body text"),
     tag: Optional[str] = typer.Option(None, "-t", "--tag", help="Comma-delimited tags"),
     file: Optional[str] = typer.Argument(None, help="Optional file to read note from"),
+    note_type: NoteType = typer.Option(
+        NoteType.MARKDOWN,
+        "--type",
+        help="Note type: markdown or json",
+    ),
 ):
     """Create a new note."""
-    run_cmd("notes make", make_note, note=note, tag=tag, file=file)
+    run_cmd(
+        "notes make",
+        make_note,
+        note=note,
+        tag=tag,
+        file=file,
+        note_type=note_type.value,
+    )
 
 
 @notes_app.command("list")
