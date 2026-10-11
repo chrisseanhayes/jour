@@ -3,11 +3,16 @@ from types import SimpleNamespace
 from unittest.mock import Mock
 
 from jour_cli.app_factory import AppFactory
+from jour_cli.cmd.notes._edit import cmd_notes_edit
 from jour_cli.cmd.notes._make import cmd_notes_make
 from jour_cli.shared.dependencies import Dependencies
 from jour_cli.shared.dependencies import DependenciesFactory
 from jour_cli.shared.editor import CommandEditor, Editor, get_editor
-from jour_cli.shared.note_content import _extract_hashtags, _parse_note_content
+from jour_cli.shared.note_content import (
+    _extract_hashtags,
+    _has_note_body,
+    _parse_note_content,
+)
 from jour_cli.shared.note_input import _resolve_note_input
 from jour_cli.storage import NoteStore
 
@@ -41,6 +46,10 @@ Body with #new-tag and #existing.
 
         self.assertEqual(tags, ["existing", "new-tag"])
         self.assertIn("#new-tag", body)
+
+    def test_front_matter_does_not_count_as_note_body(self):
+        self.assertFalse(_has_note_body("---\ntags: ['tag']\n---\n\n  \n"))
+        self.assertTrue(_has_note_body("---\ntags: ['tag']\n---\n\nBody"))
 
     def create_app_factory(self, config, note_store, editor_factory=None):
         return AppFactory(
@@ -129,11 +138,51 @@ Body with #new-tag and #existing.
 
         note_store.edit.assert_not_called()
 
+    def test_make_with_empty_value_does_not_save_and_reports_no_note(self):
+        self.dependencies.now.return_value.strftime.return_value = "date"
+        note_store = Mock(spec=NoteStore)
+        app_factory = self.create_app_factory(
+            {"front_matter": {"layout": "default"}},
+            note_store,
+        )
+
+        cmd_notes_make(
+            SimpleNamespace(note=" \n ", file=None, tag="tag"),
+            app_factory,
+        )
+
+        note_store.create.assert_not_called()
+        self.dependencies.write_stdout.assert_called_once_with("No note created.")
+
+    def test_make_deletes_editor_output_with_empty_body(self):
+        self.dependencies.now.return_value.strftime.return_value = "date"
+        self.dependencies.stdin_is_interactive.return_value = True
+        note_store = Mock(spec=NoteStore)
+        note_store.create.return_value = "note-id"
+        note_store.get.return_value = "---\ntags: ['tag']\n---\n\n"
+        note_store.delete.return_value = True
+        editor = Mock(spec=Editor)
+        app_factory = self.create_app_factory(
+            {"front_matter": {"layout": "default"}},
+            note_store,
+            editor_factory=lambda _config, _dependencies: editor,
+        )
+
+        cmd_notes_make(
+            SimpleNamespace(note=None, file=None, tag=None),
+            app_factory,
+        )
+
+        note_store.edit.assert_called_once()
+        note_store.delete.assert_called_once_with("note-id")
+        self.dependencies.write_stdout.assert_called_once_with("No note created.")
+
     def test_make_without_input_launches_configured_editor(self):
         self.dependencies.now.return_value.strftime.return_value = "date"
         self.dependencies.stdin_is_interactive.return_value = True
         note_store = Mock(spec=NoteStore)
         note_store.create.return_value = "note-id"
+        note_store.get.return_value = "---\n---\n\nA note"
         app_factory = self.create_app_factory(
             {
                 "front_matter": {"layout": "default"},
@@ -157,6 +206,7 @@ Body with #new-tag and #existing.
         self.dependencies.stdin_is_interactive.return_value = True
         note_store = Mock(spec=NoteStore)
         note_store.create.return_value = "note-id"
+        note_store.get.return_value = "---\n---\n\nA note"
         editor = Mock(spec=Editor)
         app_factory = self.create_app_factory(
             {"front_matter": {"layout": "default"}},
@@ -170,6 +220,52 @@ Body with #new-tag and #existing.
         )
 
         note_store.edit.assert_called_once_with("note-id", editor)
+
+    def test_editing_to_empty_confirms_and_deletes_note(self):
+        self.dependencies.confirm.return_value = True
+        note_store = Mock(spec=NoteStore)
+        note_store.get.side_effect = [
+            "---\ntags: ['tag']\n---\n\nOriginal body",
+            "---\ntags: ['tag']\n---\n\n",
+        ]
+        note_store.edit.return_value = True
+        note_store.delete.return_value = True
+        app_factory = self.create_app_factory(
+            {},
+            note_store,
+            editor_factory=lambda _config, _dependencies: Mock(spec=Editor),
+        )
+
+        cmd_notes_edit(SimpleNamespace(hash="note-id"), app_factory)
+
+        self.dependencies.confirm.assert_called_once_with(
+            "Note note-id is empty. Delete it?", default=False
+        )
+        note_store.delete.assert_called_once_with("note-id")
+        note_store.update.assert_not_called()
+        self.dependencies.write_stdout.assert_called_once_with(
+            "Note note-id deleted."
+        )
+
+    def test_declining_empty_note_deletion_restores_previous_content(self):
+        self.dependencies.confirm.return_value = False
+        note_store = Mock(spec=NoteStore)
+        original_content = "---\ntags: ['tag']\n---\n\nOriginal body"
+        note_store.get.side_effect = [
+            original_content,
+            "---\ntags: ['tag']\n---\n\n",
+        ]
+        note_store.edit.return_value = True
+        app_factory = self.create_app_factory(
+            {},
+            note_store,
+            editor_factory=lambda _config, _dependencies: Mock(spec=Editor),
+        )
+
+        cmd_notes_edit(SimpleNamespace(hash="note-id"), app_factory)
+
+        note_store.delete.assert_not_called()
+        note_store.update.assert_called_once_with("note-id", original_content)
 
     def test_make_indexes_hashtags_in_note_body(self):
         self.dependencies.now.return_value.strftime.return_value = "date"

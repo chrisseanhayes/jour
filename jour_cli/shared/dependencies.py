@@ -7,6 +7,8 @@ import uuid
 from datetime import datetime
 from typing import Callable, Mapping, NoReturn, Optional, Protocol, TextIO
 
+import typer
+
 
 class Dependencies:
     """External runtime dependencies used by the CLI."""
@@ -135,6 +137,10 @@ class Dependencies:
     def write_stderr(self, text: str, end: str = "\n") -> None:
         """Write text to standard error."""
         self._sys_stderr.write(f"{text}{end}")
+
+    def confirm(self, prompt: str, default: bool = False) -> bool:
+        """Prompt the user for confirmation."""
+        return typer.confirm(prompt, default=default)
 
     def exit(self, code: int) -> NoReturn:
         """Terminate the process with the given exit code."""

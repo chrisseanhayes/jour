@@ -49,6 +49,12 @@ def _parse_note_content(content: str) -> Tuple[List[str], str]:
     return list(dict.fromkeys(tags + _extract_hashtags(body))), body
 
 
+def _has_note_body(content: str) -> bool:
+    """Return whether note content has a non-empty body after front matter."""
+    _, body = _parse_note_content(content)
+    return bool(body)
+
+
 def _get_body_preview(body: str, max_length: int = 40) -> str:
     """Generate a single-line truncated preview of the note body."""
     body_preview = body.replace("\n", " ")
