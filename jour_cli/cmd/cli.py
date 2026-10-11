@@ -15,7 +15,6 @@ from jour_cli.cmd.edit import edit_note
 from jour_cli.cmd.init import init_local_journal
 from jour_cli.cmd.list import list_notes
 from jour_cli.cmd.make import make_note
-from jour_cli.cmd.search import cmd_search
 from jour_cli.cmd.tags import cmd_tags_list, cmd_tags_show
 from jour_cli.cmd.prune import cmd_prune
 
@@ -126,17 +125,6 @@ app.command("edit")(notes_edit)
 def init():
     """Initialize repo-local Jour storage in the current Git repository."""
     run_cmd("init", init_local_journal)
-
-
-@app.command()
-def search(
-    query: str = typer.Argument(..., help="Search query"),
-    jmespath_query: Optional[str] = typer.Option(
-        None, "-q", "--query", help="Apply a JMESPath query and output JSON"
-    ),
-):
-    """Search notes."""
-    run_cmd("search", cmd_search, query=query, jmespath_query=jmespath_query)
 
 
 @app.command()

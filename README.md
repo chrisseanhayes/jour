@@ -29,7 +29,6 @@ This script will check for `pipx` (installing it via Homebrew if missing), and t
 - **Hashtag tags**: Whole-word hashtags in note bodies (for example `#helloworld` or `#this-great-day`) are indexed as tags without the leading `#`, alongside tags supplied with `--tag`.
 - **`jour tags list`**: List all tags used across your notes. The local SQLite index is refreshed from note files before tag queries, so tags added by editors that return before saving are included.
 - **`jour tags show <tag>`**: Show all notes associated with a specific tag.
-- **`jour search <query>`**: Fast, grep-based full-text search across all your journal entries. Use `-q`/`--query` to apply a JMESPath expression to the matching structured note records and emit the result as JSON.
 - **Repo-local journals**: The first interactive note-related command in a Git repository asks whether to use `./.jour` for that repository. Answering no records the repository in `~/.jour/.jourignore` and uses the global journal. Non-interactive commands use the global journal unless repo-local storage already exists. Use `jour -g <command>` to explicitly use global data from a repository.
 - **`jour init`**: Initialize repo-local storage and its tag index explicitly without a prompt. This must be run inside a Git repository; it also removes that repository from `~/.jour/.jourignore` if present.
 

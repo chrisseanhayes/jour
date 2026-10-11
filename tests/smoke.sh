@@ -173,20 +173,9 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 8. search
+# 8. note body is actually written to the file
 # ---------------------------------------------------------------------------
-echo "\n[8] search"
-OUTPUT=$(jour search "smoke test")
-if [ -n "$OUTPUT" ]; then
-    pass "search returned a match"
-else
-    fail "search returned no match"
-fi
-
-# ---------------------------------------------------------------------------
-# 9. note body is actually written to the file
-# ---------------------------------------------------------------------------
-echo "\n[9] note body persisted to file"
+echo "\n[8] note body persisted to file"
 jour notes make --note "persisted body check"
 LATEST=$(ls -t ~/.jour/*.jmd | head -1)
 if grep -q "persisted body check" "$LATEST"; then
