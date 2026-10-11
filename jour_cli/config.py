@@ -58,7 +58,7 @@ def get_storage_path(config, dependencies: Dependencies):
 
 
 def resolve_storage_scope(config, dependencies: Dependencies, global_mode=False):
-    """Select global or repository-local note and tag-index storage."""
+    """Select global or repository-local note and metadata-index storage."""
     if global_mode:
         return config
 

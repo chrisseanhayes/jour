@@ -181,7 +181,7 @@ def prune():
 
 @app.command()
 def rebuild():
-    """Rebuild the tag index from the current notes."""
+    """Rebuild the note index from the current notes."""
     run_cmd("rebuild", cmd_rebuild)
 
 

@@ -30,7 +30,7 @@ def build_note_store(
 
 
 class FileSystemNoteStoreFactory:
-    """Creates the default filesystem store and its SQLite tag index."""
+    """Creates the default filesystem store and its SQLite metadata index."""
 
     def __init__(
         self,

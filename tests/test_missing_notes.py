@@ -8,7 +8,7 @@ from jour_cli.cmd.edit import edit_note
 
 REBUILD_HINT = (
     "Hint: If this note was deleted outside Jour, run `jour rebuild` to "
-    "refresh the tag index."
+    "refresh the note index."
 )
 
 

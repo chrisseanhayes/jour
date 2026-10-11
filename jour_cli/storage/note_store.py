@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import Dict, List, Optional, Protocol, Tuple
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Protocol, Tuple
 
 from jour_cli.shared.editor import Editor
 
@@ -10,13 +10,16 @@ class Note:
     id: str
     content: str
     tags: List[str]
+    kvp: Dict[str, Any] = field(default_factory=dict)
 
 
 class TagIndex(Protocol):
     """Index interface used by the filesystem note store."""
 
-    def index_note(self, filepath: str, tags: List[str]) -> None:
-        """Index a note and its tags."""
+    def index_note(
+        self, filepath: str, tags: List[str], kvp: Optional[Dict[str, Any]] = None
+    ) -> None:
+        """Index a note, its tags, and its key/value metadata."""
 
     def tag_counts(self) -> List[Tuple[str, int]]:
         """Return tag/count pairs."""
@@ -27,11 +30,16 @@ class TagIndex(Protocol):
     def tags_by_note(self) -> Dict[str, List[str]]:
         """Return tags grouped by note filename."""
 
+    def kvp_by_note(self) -> Dict[str, Dict[str, Any]]:
+        """Return key/value metadata grouped by note filename."""
+
     def delete_note(self, filename: str) -> None:
         """Remove a note from the index."""
 
-    def rebuild(self, notes: List[Tuple[str, List[str]]]) -> None:
-        """Replace the index with the supplied note files and their tags."""
+    def rebuild(
+        self, notes: List[Tuple[str, List[str], Dict[str, Any]]]
+    ) -> None:
+        """Replace the index with the supplied note files, tags, and key/value data."""
 
     def indexed_filenames(self) -> List[str]:
         """Return all filenames currently recorded in the index."""
@@ -78,7 +86,7 @@ class NoteStore(ABC):
 
     @abstractmethod
     def rebuild_tag_index(self) -> int:
-        """Rebuild the tag index from the current note files."""
+        """Rebuild tag and key/value indexes from the current note files."""
 
     @abstractmethod
     def deleted_note_count(self) -> int:

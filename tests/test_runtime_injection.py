@@ -170,7 +170,7 @@ class RuntimeInjectionTests(unittest.TestCase):
             "/tmp/notes/20261010163840_12345678.jmd", "body"
         )
         tag_index.index_note.assert_called_once_with(
-            "/tmp/notes/20261010163840_12345678.jmd", ["tag"]
+            "/tmp/notes/20261010163840_12345678.jmd", ["tag"], {}
         )
 
     def test_tag_queries_refresh_hashtags_saved_after_editor_returns(self):

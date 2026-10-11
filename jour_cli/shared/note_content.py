@@ -90,6 +90,33 @@ def _parse_note_content(content: str) -> Tuple[List[str], str]:
     return list(dict.fromkeys(tags + _extract_hashtags(body))), body
 
 
+def _parse_note_kvp(content: str) -> Dict[str, Any]:
+    """Parse JSON-compatible key/value metadata from note front matter."""
+    parts = content.split("---", 2)
+    if len(parts) < 3:
+        return {}
+
+    try:
+        front_matter = yaml.safe_load(parts[1]) or {}
+    except yaml.YAMLError as error:
+        raise ValueError(f"Invalid note front matter: {error}") from error
+    if not isinstance(front_matter, dict):
+        raise ValueError("Note front matter must be a mapping.")
+
+    kvp = front_matter.get("kvp", {})
+    if kvp is None:
+        return {}
+    if not isinstance(kvp, dict):
+        raise ValueError("Front matter kvp must be a mapping.")
+    if not all(isinstance(key, str) for key in kvp):
+        raise ValueError("Front matter kvp keys must be strings.")
+    try:
+        json.dumps(kvp, allow_nan=False)
+    except (TypeError, ValueError) as error:
+        raise ValueError("Front matter kvp values must be JSON-compatible.") from error
+    return kvp
+
+
 def _add_front_matter_tag(content: str, tag: str) -> str:
     """Add a tag to note front matter while preserving its body and metadata."""
     parts = content.split("---", 2)

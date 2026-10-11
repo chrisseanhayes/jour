@@ -52,7 +52,7 @@ class RebuildTests(unittest.TestCase):
 
         note_store.rebuild_tag_index.assert_called_once_with()
         dependencies.write_stdout.assert_called_once_with(
-            "Rebuilt tag index for 3 note(s)."
+            "Rebuilt note index for 3 note(s)."
         )
 
     def test_deleted_note_count_compares_indexed_notes_to_note_files(self):

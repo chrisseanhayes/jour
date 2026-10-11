@@ -40,7 +40,7 @@ class AppFactory:
         self._global_mode = global_mode
 
     def initialize_local_journal(self) -> Config:
-        """Create repo-local journal storage and initialize its tag index."""
+        """Create repo-local journal storage and initialize its metadata index."""
         config = initialize_local_storage(
             self._config_loader(self.dependencies), self.dependencies
         )

@@ -1,5 +1,6 @@
+import json
 import sqlite3
-from typing import Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from jour_cli.shared.dependencies import Dependencies
 
@@ -20,11 +21,20 @@ CREATE TABLE IF NOT EXISTS tags (
 
 CREATE INDEX IF NOT EXISTS idx_tags_tag     ON tags(tag);
 CREATE INDEX IF NOT EXISTS idx_tags_note_id ON tags(note_id);
+
+CREATE TABLE IF NOT EXISTS kvp_values (
+    note_id INTEGER NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+    key     TEXT    NOT NULL,
+    value   TEXT    NOT NULL,
+    PRIMARY KEY (note_id, key)
+);
+
+CREATE INDEX IF NOT EXISTS idx_kvp_key_value ON kvp_values(key, value);
 """
 
 
 class SQLiteTagIndex:
-    """SQLite persistence for filesystem note tags."""
+    """SQLite persistence for filesystem note tags and key/value metadata."""
 
     def __init__(
         self,
@@ -44,9 +54,14 @@ class SQLiteTagIndex:
         with self._get_conn() as conn:
             conn.executescript(_SCHEMA)
 
-    def index_note(self, filepath: str, tags: List[str]) -> None:
+    def index_note(
+        self,
+        filepath: str,
+        tags: List[str],
+        kvp: Optional[Dict[str, Any]] = None,
+    ) -> None:
         with self._get_conn() as conn:
-            self._index_note(conn, filepath, tags)
+            self._index_note(conn, filepath, tags, kvp or {})
 
     def tag_counts(self) -> List[Tuple[str, int]]:
         with self._get_conn() as conn:
@@ -89,15 +104,34 @@ class SQLiteTagIndex:
             tags_by_note.setdefault(row["filename"], []).append(row["tag"])
         return tags_by_note
 
+    def kvp_by_note(self) -> Dict[str, Dict[str, Any]]:
+        with self._get_conn() as conn:
+            rows = conn.execute(
+                """
+                SELECT n.filename, k.key, k.value
+                FROM notes n
+                JOIN kvp_values k ON k.note_id = n.id
+                ORDER BY n.filename DESC, k.key ASC
+                """
+            ).fetchall()
+        kvp_by_note: Dict[str, Dict[str, Any]] = {}
+        for row in rows:
+            kvp_by_note.setdefault(row["filename"], {})[row["key"]] = json.loads(
+                row["value"]
+            )
+        return kvp_by_note
+
     def delete_note(self, filename: str) -> None:
         with self._get_conn() as conn:
             conn.execute("DELETE FROM notes WHERE filename = ?", (filename,))
 
-    def rebuild(self, notes: List[Tuple[str, List[str]]]) -> None:
+    def rebuild(
+        self, notes: List[Tuple[str, List[str], Dict[str, Any]]]
+    ) -> None:
         with self._get_conn() as conn:
             conn.execute("DELETE FROM notes")
-            for filepath, tags in notes:
-                self._index_note(conn, filepath, tags)
+            for filepath, tags, kvp in notes:
+                self._index_note(conn, filepath, tags, kvp)
 
     def indexed_filenames(self) -> List[str]:
         with self._get_conn() as conn:
@@ -111,7 +145,11 @@ class SQLiteTagIndex:
         return conn
 
     def _index_note(
-        self, conn: sqlite3.Connection, filepath: str, tags: List[str]
+        self,
+        conn: sqlite3.Connection,
+        filepath: str,
+        tags: List[str],
+        kvp: Dict[str, Any],
     ) -> None:
         filename = self.dependencies.basename(filepath)
         created_at = filename.split("_")[0]
@@ -131,4 +169,16 @@ class SQLiteTagIndex:
         conn.executemany(
             "INSERT INTO tags (note_id, tag) VALUES (?, ?)",
             [(note_id, tag) for tag in tags],
+        )
+        conn.execute("DELETE FROM kvp_values WHERE note_id = ?", (note_id,))
+        conn.executemany(
+            "INSERT INTO kvp_values (note_id, key, value) VALUES (?, ?, ?)",
+            [
+                (
+                    note_id,
+                    key,
+                    json.dumps(value, ensure_ascii=False, allow_nan=False),
+                )
+                for key, value in kvp.items()
+            ],
         )

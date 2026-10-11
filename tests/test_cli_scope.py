@@ -51,7 +51,7 @@ class CliScopeTests(unittest.TestCase):
 
         self.assertEqual(result.exit_code, 0, result.output)
         note_store.rebuild_tag_index.assert_called_once_with()
-        stdout.assert_called_once_with("Rebuilt tag index for 0 note(s).")
+        stdout.assert_called_once_with("Rebuilt note index for 0 note(s).")
 
     def test_index_status_command_is_registered(self):
         runner = CliRunner()

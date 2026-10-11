@@ -1,13 +1,13 @@
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from jour_cli.shared.dependencies import Dependencies
 from jour_cli.shared.editor import Editor
-from jour_cli.shared.note_content import _parse_note_content
+from jour_cli.shared.note_content import _parse_note_content, _parse_note_kvp
 from jour_cli.storage.note_store import Note, NoteStore, TagIndex
 
 
 class FileSystemNoteStore(NoteStore):
-    """Filesystem-backed note store with a SQLite tag index."""
+    """Filesystem-backed note store with a SQLite metadata index."""
 
     def __init__(
         self,
@@ -24,6 +24,7 @@ class FileSystemNoteStore(NoteStore):
 
     def create(self, content: str, tags: List[str]) -> str:
         parsed_tags, _ = _parse_note_content(content)
+        kvp = _parse_note_kvp(content)
         all_tags = list(dict.fromkeys(tags + parsed_tags))
         self.dependencies.makedirs(self.storage, exist_ok=True)
         timestamp = self.dependencies.now().strftime("%Y%m%d%H%M%S")
@@ -31,7 +32,7 @@ class FileSystemNoteStore(NoteStore):
         note_id = f"{timestamp}_{uid}"
         filepath = self._filepath(note_id)
         self.dependencies.write_file(filepath, content)
-        self.tag_index.index_note(filepath, all_tags)
+        self.tag_index.index_note(filepath, all_tags, kvp)
         return note_id
 
     def get(self, note_id: str) -> Optional[str]:
@@ -43,6 +44,7 @@ class FileSystemNoteStore(NoteStore):
     def list(self) -> List[Note]:
         self._refresh_tag_index()
         tags_by_note = self.tag_index.tags_by_note()
+        kvp_by_note = self.tag_index.kvp_by_note()
         paths = self.dependencies.list_files(f"*.{self.extension}", self.storage)
         notes = []
         for filepath in paths:
@@ -51,16 +53,24 @@ class FileSystemNoteStore(NoteStore):
             note_id = self.dependencies.splitext(
                 filename
             )[0]
-            notes.append(Note(note_id, content, tags_by_note.get(filename, [])))
+            notes.append(
+                Note(
+                    note_id,
+                    content,
+                    tags_by_note.get(filename, []),
+                    kvp_by_note.get(filename, {}),
+                )
+            )
         return notes
 
     def update(self, note_id: str, content: str) -> bool:
         filepath = self._filepath(note_id)
         if not self.dependencies.exists(filepath):
             return False
-        self.dependencies.write_file(filepath, content)
         tags, _ = _parse_note_content(content)
-        self.tag_index.index_note(filepath, tags)
+        kvp = _parse_note_kvp(content)
+        self.dependencies.write_file(filepath, content)
+        self.tag_index.index_note(filepath, tags, kvp)
         return True
 
     def delete(self, note_id: str) -> bool:
@@ -78,7 +88,7 @@ class FileSystemNoteStore(NoteStore):
         editor.open(filepath)
         content = self.dependencies.read_file(filepath)
         tags, _ = _parse_note_content(content)
-        self.tag_index.index_note(filepath, tags)
+        self.tag_index.index_note(filepath, tags, _parse_note_kvp(content))
         return True
 
     def search(self, query: str) -> List[str]:
@@ -101,13 +111,13 @@ class FileSystemNoteStore(NoteStore):
         ]
 
     def rebuild_tag_index(self) -> int:
-        notes: List[Tuple[str, List[str]]] = []
+        notes: List[Tuple[str, List[str], Dict[str, Any]]] = []
         for filepath in self.dependencies.list_files(
             f"*.{self.extension}", self.storage
         ):
             content = self.dependencies.read_file(filepath)
             tags, _ = _parse_note_content(content)
-            notes.append((filepath, tags))
+            notes.append((filepath, tags, _parse_note_kvp(content)))
         self.tag_index.rebuild(notes)
         return len(notes)
 
@@ -127,7 +137,7 @@ class FileSystemNoteStore(NoteStore):
         ):
             content = self.dependencies.read_file(filepath)
             tags, _ = _parse_note_content(content)
-            self.tag_index.index_note(filepath, tags)
+            self.tag_index.index_note(filepath, tags, _parse_note_kvp(content))
 
     def _filepath(self, note_id: str) -> str:
         if not note_id or self.dependencies.basename(note_id) != note_id:

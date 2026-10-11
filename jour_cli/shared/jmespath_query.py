@@ -24,6 +24,7 @@ def query_notes(notes: List[Note], expression: str) -> str:
                 "id": note.id,
                 "type": note_type,
                 "tags": note.tags,
+                "kvp": note.kvp,
                 "content": note.content,
                 "body": body,
                 "data": data,

@@ -18,7 +18,7 @@ def edit_note(args, app_factory: AppFactory):
             )
             dependencies.write_stderr(
                 "Hint: If this note was deleted outside Jour, run `jour rebuild` to "
-                "refresh the tag index."
+                "refresh the note index."
             )
             dependencies.exit(1)
 
@@ -27,7 +27,7 @@ def edit_note(args, app_factory: AppFactory):
             dependencies.write_stderr(f"Error: Note {note_id} not found.")
             dependencies.write_stderr(
                 "Hint: If this note was deleted outside Jour, run `jour rebuild` to "
-                "refresh the tag index."
+                "refresh the note index."
             )
             dependencies.exit(1)
         try:
