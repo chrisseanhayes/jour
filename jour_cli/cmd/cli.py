@@ -18,6 +18,7 @@ from jour_cli.cmd.notes import (
 )
 from jour_cli.cmd.search import cmd_search
 from jour_cli.cmd.tags import cmd_tags_list, cmd_tags_show
+from jour_cli.cmd.prune import cmd_prune
 
 app = typer.Typer()
 notes_app = typer.Typer()
@@ -112,6 +113,12 @@ def history(
     lines = app_factory.read_history(limit=count)
     for line in lines:
         app_factory.dependencies.write_stdout(line)
+
+
+@app.command()
+def prune():
+    """Delete all notes with empty bodies."""
+    run_cmd("prune", cmd_prune)
 
 
 @tags_app.command("list")
