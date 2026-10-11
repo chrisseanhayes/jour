@@ -16,11 +16,19 @@ def edit_note(args, app_factory: AppFactory):
             dependencies.write_stderr(
                 f"Error: Note with hash {args.hash} not found."
             )
+            dependencies.write_stderr(
+                "Hint: If this note was deleted outside Jour, run `jour rebuild` to "
+                "refresh the tag index."
+            )
             dependencies.exit(1)
 
         edited_content = note_store.get(note_id)
         if edited_content is None:
             dependencies.write_stderr(f"Error: Note {note_id} not found.")
+            dependencies.write_stderr(
+                "Hint: If this note was deleted outside Jour, run `jour rebuild` to "
+                "refresh the tag index."
+            )
             dependencies.exit(1)
         if not _has_note_body(edited_content):
             if dependencies.confirm(

@@ -30,6 +30,12 @@ class TagIndex(Protocol):
     def delete_note(self, filename: str) -> None:
         """Remove a note from the index."""
 
+    def rebuild(self, notes: List[Tuple[str, List[str]]]) -> None:
+        """Replace the index with the supplied note files and their tags."""
+
+    def indexed_filenames(self) -> List[str]:
+        """Return all filenames currently recorded in the index."""
+
 
 class NoteStore(ABC):
     """Persistence interface used by commands to manage notes."""
@@ -69,3 +75,11 @@ class NoteStore(ABC):
     @abstractmethod
     def notes_for_tag(self, tag: str) -> List[str]:
         """Return identifiers for notes carrying a tag."""
+
+    @abstractmethod
+    def rebuild_tag_index(self) -> int:
+        """Rebuild the tag index from the current note files."""
+
+    @abstractmethod
+    def deleted_note_count(self) -> int:
+        """Return indexed notes whose files are no longer present."""

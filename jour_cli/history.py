@@ -1,3 +1,5 @@
+from typing import Optional
+
 from jour_cli.shared.dependencies import Dependencies
 
 
@@ -34,9 +36,9 @@ def log_command(
 
 def read_history(
     dependencies: Dependencies,
-    limit: int = 20,
+    limit: Optional[int] = 20,
 ) -> list:
-    """Read and return the last N lines from the history file."""
+    """Read history, optionally returning only its last N lines."""
     history_path = get_history_path(dependencies)
 
     if not dependencies.exists(history_path):
@@ -45,4 +47,6 @@ def read_history(
 
     lines = dependencies.read_file(history_path).splitlines(keepends=True)
 
-    return [line.rstrip("\n") for line in lines[-limit:]]
+    if limit is not None:
+        lines = lines[-limit:] if limit else []
+    return [line.rstrip("\n") for line in lines]

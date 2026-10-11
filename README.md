@@ -47,6 +47,8 @@ This script checks for `pipx` (installing it via Homebrew if missing), installs 
 * **`jour edit <hash>`**: Open a note for editing. Clearing the body prompts for deletion confirmation.
 * **`jour delete <hash>`**: Permanently delete a note and remove it from the tag index.
 * **`jour prune`**: Delete all notes with empty bodies.
+* **`jour rebuild`**: Rebuild the tag index from the current note files, removing entries for notes that were deleted outside Jour.
+* **`jour index --status`**: Show when the index was last rebuilt and how many indexed notes have been deleted from disk.
 * **`jour init`**: Explicitly initialize repo-local storage and its tag index inside a Git repository.
 * **`jour tags list`**: List all tags used across your notes.
 * **`jour tags show <tag>`**: Display all notes associated with a specific tag.

@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Optional
 
 from jour_cli.config import initialize_local_storage, resolve_storage_scope
 from jour_cli.history import log_command, read_history
@@ -56,5 +56,5 @@ class AppFactory:
     def log_command(self, command: str, args=None) -> None:
         log_command(command, args=args, dependencies=self.dependencies)
 
-    def read_history(self, limit: int = 20) -> list:
+    def read_history(self, limit: Optional[int] = 20) -> list:
         return read_history(dependencies=self.dependencies, limit=limit)

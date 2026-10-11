@@ -100,6 +100,27 @@ class FileSystemNoteStore(NoteStore):
             for filename in self.tag_index.notes_for_tag(tag)
         ]
 
+    def rebuild_tag_index(self) -> int:
+        notes: List[Tuple[str, List[str]]] = []
+        for filepath in self.dependencies.list_files(
+            f"*.{self.extension}", self.storage
+        ):
+            content = self.dependencies.read_file(filepath)
+            tags, _ = _parse_note_content(content)
+            notes.append((filepath, tags))
+        self.tag_index.rebuild(notes)
+        return len(notes)
+
+    def deleted_note_count(self) -> int:
+        current_filenames = {
+            self.dependencies.basename(filepath)
+            for filepath in self.dependencies.list_files(
+                f"*.{self.extension}", self.storage
+            )
+        }
+        indexed_filenames = set(self.tag_index.indexed_filenames())
+        return len(indexed_filenames - current_filenames)
+
     def _refresh_tag_index(self) -> None:
         for filepath in self.dependencies.list_files(
             f"*.{self.extension}", self.storage

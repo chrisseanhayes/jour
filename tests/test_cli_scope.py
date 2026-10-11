@@ -37,6 +37,43 @@ class CliScopeTests(unittest.TestCase):
         self.assertEqual(result.exit_code, 0, result.output)
         set_global_mode.assert_called_once_with(False)
 
+    def test_rebuild_command_is_registered(self):
+        runner = CliRunner()
+        with patch.object(cli.app_factory, "log_command"):
+            with patch.object(cli.app_factory, "get_config", return_value={}):
+                with patch.object(cli.app_factory, "get_note_store") as get_note_store:
+                    with patch.object(
+                        cli.app_factory.dependencies, "write_stdout"
+                    ) as stdout:
+                        note_store = get_note_store.return_value
+                        note_store.rebuild_tag_index.return_value = 0
+                        result = runner.invoke(cli.app, ["rebuild"])
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        note_store.rebuild_tag_index.assert_called_once_with()
+        stdout.assert_called_once_with("Rebuilt tag index for 0 note(s).")
+
+    def test_index_status_command_is_registered(self):
+        runner = CliRunner()
+        with patch.object(cli.app_factory, "log_command"):
+            with patch.object(cli.app_factory, "get_config", return_value={}):
+                with patch.object(cli.app_factory, "get_note_store") as get_note_store:
+                    get_note_store.return_value.deleted_note_count.return_value = 0
+                    with patch.object(
+                        cli.app_factory, "read_history", return_value=[]
+                    ):
+                        with patch.object(
+                            cli.app_factory.dependencies, "write_stdout"
+                        ) as stdout:
+                            result = runner.invoke(cli.app, ["index", "--status"])
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        get_note_store.return_value.deleted_note_count.assert_called_once_with()
+        self.assertEqual(
+            [call.args[0] for call in stdout.call_args_list],
+            ["Last rebuilt: Never", "Deleted notes: 0"],
+        )
+
     def test_init_initializes_local_journal(self):
         runner = CliRunner()
         with patch.object(cli.app_factory, "log_command"):

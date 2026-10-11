@@ -9,4 +9,8 @@ def cat_note(args, app_factory: AppFactory):
         app_factory.dependencies.write_stdout(content, end="")
     else:
         app_factory.dependencies.write_stderr(f"Error: Note {args.hash} not found.")
+        app_factory.dependencies.write_stderr(
+            "Hint: If this note was deleted outside Jour, run `jour rebuild` to "
+            "refresh the tag index."
+        )
         app_factory.dependencies.exit(1)

@@ -45,26 +45,8 @@ class SQLiteTagIndex:
             conn.executescript(_SCHEMA)
 
     def index_note(self, filepath: str, tags: List[str]) -> None:
-        filename = self.dependencies.basename(filepath)
-        created_at = filename.split("_")[0]
         with self._get_conn() as conn:
-            conn.execute(
-                """
-                INSERT INTO notes (filename, filepath, created_at)
-                VALUES (?, ?, ?)
-                ON CONFLICT(filename) DO UPDATE SET filepath = excluded.filepath
-                """,
-                (filename, filepath, created_at),
-            )
-            row = conn.execute(
-                "SELECT id FROM notes WHERE filename = ?", (filename,)
-            ).fetchone()
-            note_id = row["id"]
-            conn.execute("DELETE FROM tags WHERE note_id = ?", (note_id,))
-            conn.executemany(
-                "INSERT INTO tags (note_id, tag) VALUES (?, ?)",
-                [(note_id, tag) for tag in tags],
-            )
+            self._index_note(conn, filepath, tags)
 
     def tag_counts(self) -> List[Tuple[str, int]]:
         with self._get_conn() as conn:
@@ -111,8 +93,42 @@ class SQLiteTagIndex:
         with self._get_conn() as conn:
             conn.execute("DELETE FROM notes WHERE filename = ?", (filename,))
 
+    def rebuild(self, notes: List[Tuple[str, List[str]]]) -> None:
+        with self._get_conn() as conn:
+            conn.execute("DELETE FROM notes")
+            for filepath, tags in notes:
+                self._index_note(conn, filepath, tags)
+
+    def indexed_filenames(self) -> List[str]:
+        with self._get_conn() as conn:
+            rows = conn.execute("SELECT filename FROM notes").fetchall()
+        return [row["filename"] for row in rows]
+
     def _get_conn(self) -> sqlite3.Connection:
         conn = self.connection_factory(self.database_path)
         conn.execute("PRAGMA foreign_keys = ON")
         conn.row_factory = sqlite3.Row
         return conn
+
+    def _index_note(
+        self, conn: sqlite3.Connection, filepath: str, tags: List[str]
+    ) -> None:
+        filename = self.dependencies.basename(filepath)
+        created_at = filename.split("_")[0]
+        conn.execute(
+            """
+            INSERT INTO notes (filename, filepath, created_at)
+            VALUES (?, ?, ?)
+            ON CONFLICT(filename) DO UPDATE SET filepath = excluded.filepath
+            """,
+            (filename, filepath, created_at),
+        )
+        row = conn.execute(
+            "SELECT id FROM notes WHERE filename = ?", (filename,)
+        ).fetchone()
+        note_id = row["id"]
+        conn.execute("DELETE FROM tags WHERE note_id = ?", (note_id,))
+        conn.executemany(
+            "INSERT INTO tags (note_id, tag) VALUES (?, ?)",
+            [(note_id, tag) for tag in tags],
+        )

@@ -18,6 +18,8 @@ from jour_cli.cmd.list import list_notes
 from jour_cli.cmd.make import make_note
 from jour_cli.cmd.tags import cmd_tags_list, cmd_tags_show
 from jour_cli.cmd.prune import cmd_prune
+from jour_cli.cmd.rebuild import cmd_rebuild
+from jour_cli.cmd.index import cmd_index_status
 
 app = typer.Typer()
 notes_app = typer.Typer()
@@ -157,6 +159,24 @@ def history(
 def prune():
     """Delete all notes with empty bodies."""
     run_cmd("prune", cmd_prune)
+
+
+@app.command()
+def rebuild():
+    """Rebuild the tag index from the current notes."""
+    run_cmd("rebuild", cmd_rebuild)
+
+
+@app.command()
+def index(
+    status: bool = typer.Option(
+        False, "--status", help="Show the last rebuild time and deleted note count"
+    ),
+):
+    """Inspect the note index."""
+    if not status:
+        raise typer.BadParameter("Use --status to inspect the index.")
+    run_cmd("index", cmd_index_status, status=status)
 
 
 @tags_app.command("list")
