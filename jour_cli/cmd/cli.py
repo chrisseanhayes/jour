@@ -8,14 +8,12 @@ from jour_cli.config import load_config
 from jour_cli.shared.dependencies import DefaultDependenciesFactory
 from jour_cli.shared.editor import get_editor
 from jour_cli.storage.factory import FileSystemNoteStoreFactory
-from jour_cli.cmd.notes import (
-    cmd_notes_archive,
-    cmd_notes_cat,
-    cmd_notes_delete,
-    cmd_notes_edit,
-    cmd_notes_list,
-    cmd_notes_make,
-)
+from jour_cli.cmd.archive import archive_note
+from jour_cli.cmd.cat import cat_note
+from jour_cli.cmd.delete import delete_note
+from jour_cli.cmd.edit import edit_note
+from jour_cli.cmd.list import list_notes
+from jour_cli.cmd.make import make_note
 from jour_cli.cmd.search import cmd_search
 from jour_cli.cmd.tags import cmd_tags_list, cmd_tags_show
 from jour_cli.cmd.prune import cmd_prune
@@ -47,7 +45,7 @@ def notes_make(
     file: Optional[str] = typer.Argument(None, help="Optional file to read note from"),
 ):
     """Create a new note."""
-    run_cmd("notes make", cmd_notes_make, note=note, tag=tag, file=file)
+    run_cmd("notes make", make_note, note=note, tag=tag, file=file)
 
 
 @notes_app.command("list")
@@ -62,7 +60,7 @@ def notes_list(
     """List notes, excluding those tagged 'jour-archive' by default."""
     run_cmd(
         "notes list",
-        cmd_notes_list,
+        list_notes,
         show_archived=show_archived,
         jmespath_query=jmespath_query,
     )
@@ -76,7 +74,7 @@ def notes_archive(
     ),
 ):
     """Archive a note, or use --undo to remove its archive tag."""
-    run_cmd("notes archive", cmd_notes_archive, hash=hash, undo=undo)
+    run_cmd("notes archive", archive_note, hash=hash, undo=undo)
 
 
 @notes_app.command("cat")
@@ -84,7 +82,7 @@ def notes_cat(
     hash: str = typer.Argument(..., help="Note hash"),
 ):
     """View a note by hash."""
-    run_cmd("notes cat", cmd_notes_cat, hash=hash)
+    run_cmd("notes cat", cat_note, hash=hash)
 
 
 @notes_app.command("delete")
@@ -92,7 +90,7 @@ def notes_delete(
     hash: str = typer.Argument(..., help="Note hash"),
 ):
     """Delete a note by hash."""
-    run_cmd("notes delete", cmd_notes_delete, hash=hash)
+    run_cmd("notes delete", delete_note, hash=hash)
 
 
 @notes_app.command("edit")
@@ -100,7 +98,17 @@ def notes_edit(
     hash: str = typer.Argument(..., help="Note hash"),
 ):
     """Edit a note by hash."""
-    run_cmd("notes edit", cmd_notes_edit, hash=hash)
+    run_cmd("notes edit", edit_note, hash=hash)
+
+
+# Keep the original grouped commands available while exposing the common
+# note operations directly at the top level.
+app.command("make")(notes_make)
+app.command("list")(notes_list)
+app.command("archive")(notes_archive)
+app.command("cat")(notes_cat)
+app.command("delete")(notes_delete)
+app.command("edit")(notes_edit)
 
 
 @app.command()

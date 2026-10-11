@@ -139,6 +139,18 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# 5c. top-level note command aliases
+# ---------------------------------------------------------------------------
+echo "\n[5c] top-level note commands"
+jour make --note "top-level command smoke note"
+OUTPUT=$(jour list)
+if echo "$OUTPUT" | grep -q "top-level command smoke note"; then
+    pass "top-level make and list commands work"
+else
+    fail "top-level list did not show the note created by make"
+fi
+
+# ---------------------------------------------------------------------------
 # 6. tags list
 # ---------------------------------------------------------------------------
 echo "\n[6] tags list"

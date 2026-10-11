@@ -1,11 +1,11 @@
 from jour_cli.app_factory import AppFactory
-from ...shared.note_content import (
+from jour_cli.shared.note_content import (
     _add_front_matter_tag,
     _remove_front_matter_tag,
 )
 
 
-def cmd_notes_archive(args, app_factory: AppFactory):
+def archive_note(args, app_factory: AppFactory):
     config = app_factory.get_config()
     dependencies = app_factory.dependencies
     note_store = app_factory.get_note_store(config)

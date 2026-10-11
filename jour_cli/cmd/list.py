@@ -1,9 +1,9 @@
 from jour_cli.app_factory import AppFactory
-from ...shared.jmespath_query import query_notes
-from ...shared.note_content import _get_body_preview, _parse_note_content
+from jour_cli.shared.jmespath_query import query_notes
+from jour_cli.shared.note_content import _get_body_preview, _parse_note_content
 
 
-def cmd_notes_list(args, app_factory: AppFactory):
+def list_notes(args, app_factory: AppFactory):
     config = app_factory.get_config()
     note_store = app_factory.get_note_store(config)
 

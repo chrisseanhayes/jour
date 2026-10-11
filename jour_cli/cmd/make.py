@@ -1,13 +1,13 @@
 from jour_cli.app_factory import AppFactory
-from ...shared.note_content import (
+from jour_cli.shared.note_content import (
     _build_note_content,
     _extract_hashtags,
     _has_note_body,
 )
-from ...shared.note_input import _resolve_note_input
+from jour_cli.shared.note_input import _resolve_note_input
 
 
-def cmd_notes_make(args, app_factory: AppFactory):
+def make_note(args, app_factory: AppFactory):
     config = app_factory.get_config()
     dependencies = app_factory.dependencies
     note_store = app_factory.get_note_store(config)

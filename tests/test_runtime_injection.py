@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, Mock
 from uuid import UUID
 
 from jour_cli.app_factory import AppFactory
-from jour_cli.cmd.notes._make import cmd_notes_make
+from jour_cli.cmd.make import make_note
 from jour_cli.config import _default_editor, load_config
 from jour_cli.history import log_command, read_history
 from jour_cli.shared.dependencies import Dependencies, DependenciesFactory
@@ -285,7 +285,7 @@ class RuntimeInjectionTests(unittest.TestCase):
             get_editor,
         )
 
-        cmd_notes_make(
+        make_note(
             type("Args", (), {"note": "body", "file": None, "tag": None})(),
             app_factory,
         )

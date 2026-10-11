@@ -2,7 +2,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock
 
-from jour_cli.cmd.notes._archive import cmd_notes_archive
+from jour_cli.cmd.archive import archive_note
 from jour_cli.shared.note_content import (
     _add_front_matter_tag,
     _parse_note_content,
@@ -25,7 +25,7 @@ class NotesArchiveTests(unittest.TestCase):
         self.note_store.get.return_value = original_content
         self.note_store.update.return_value = True
 
-        cmd_notes_archive(SimpleNamespace(hash="note-id"), self.app_factory)
+        archive_note(SimpleNamespace(hash="note-id"), self.app_factory)
 
         self.note_store.update.assert_called_once()
         note_id, archived_content = self.note_store.update.call_args.args
@@ -53,7 +53,7 @@ class NotesArchiveTests(unittest.TestCase):
             "---\ntags:\n- jour-archive\n---\n\nNote body"
         )
 
-        cmd_notes_archive(SimpleNamespace(hash="note-id"), self.app_factory)
+        archive_note(SimpleNamespace(hash="note-id"), self.app_factory)
 
         self.note_store.update.assert_not_called()
         self.dependencies.write_stdout.assert_called_once_with(
@@ -65,7 +65,7 @@ class NotesArchiveTests(unittest.TestCase):
         self.note_store.update.return_value = False
 
         with self.assertRaises(SystemExit):
-            cmd_notes_archive(SimpleNamespace(hash="note-id"), self.app_factory)
+            archive_note(SimpleNamespace(hash="note-id"), self.app_factory)
 
         self.dependencies.write_stderr.assert_called_once_with(
             "Error: Note note-id could not be archived."
@@ -80,7 +80,7 @@ class NotesArchiveTests(unittest.TestCase):
         self.note_store.get.return_value = original_content
         self.note_store.update.return_value = True
 
-        cmd_notes_archive(
+        archive_note(
             SimpleNamespace(hash="note-id", undo=True), self.app_factory
         )
 
@@ -100,7 +100,7 @@ class NotesArchiveTests(unittest.TestCase):
     def test_undo_without_archive_tag_is_idempotent(self):
         self.note_store.get.return_value = "---\ntags:\n- personal\n---\n\nNote body"
 
-        cmd_notes_archive(
+        archive_note(
             SimpleNamespace(hash="note-id", undo=True), self.app_factory
         )
 
@@ -113,7 +113,7 @@ class NotesArchiveTests(unittest.TestCase):
         self.note_store.get.return_value = None
 
         with self.assertRaises(SystemExit):
-            cmd_notes_archive(SimpleNamespace(hash="missing"), self.app_factory)
+            archive_note(SimpleNamespace(hash="missing"), self.app_factory)
 
         self.dependencies.write_stderr.assert_called_once_with(
             "Error: Note missing not found."

@@ -3,8 +3,8 @@ from types import SimpleNamespace
 from unittest.mock import Mock
 
 from jour_cli.app_factory import AppFactory
-from jour_cli.cmd.notes._edit import cmd_notes_edit
-from jour_cli.cmd.notes._make import cmd_notes_make
+from jour_cli.cmd.edit import edit_note
+from jour_cli.cmd.make import make_note
 from jour_cli.shared.dependencies import Dependencies
 from jour_cli.shared.dependencies import DependenciesFactory
 from jour_cli.shared.editor import CommandEditor, Editor, get_editor
@@ -131,7 +131,7 @@ Body with #new-tag and #existing.
             note_store,
         )
 
-        cmd_notes_make(
+        make_note(
             SimpleNamespace(note="", file=None, tag=None),
             app_factory,
         )
@@ -146,7 +146,7 @@ Body with #new-tag and #existing.
             note_store,
         )
 
-        cmd_notes_make(
+        make_note(
             SimpleNamespace(note=" \n ", file=None, tag="tag"),
             app_factory,
         )
@@ -168,7 +168,7 @@ Body with #new-tag and #existing.
             editor_factory=lambda _config, _dependencies: editor,
         )
 
-        cmd_notes_make(
+        make_note(
             SimpleNamespace(note=None, file=None, tag=None),
             app_factory,
         )
@@ -191,7 +191,7 @@ Body with #new-tag and #existing.
             note_store,
         )
 
-        cmd_notes_make(
+        make_note(
             SimpleNamespace(note=None, file=None, tag=None),
             app_factory,
         )
@@ -214,7 +214,7 @@ Body with #new-tag and #existing.
             editor_factory=lambda _config, _dependencies: editor,
         )
 
-        cmd_notes_make(
+        make_note(
             SimpleNamespace(note=None, file=None, tag=None),
             app_factory,
         )
@@ -236,7 +236,7 @@ Body with #new-tag and #existing.
             editor_factory=lambda _config, _dependencies: Mock(spec=Editor),
         )
 
-        cmd_notes_edit(SimpleNamespace(hash="note-id"), app_factory)
+        edit_note(SimpleNamespace(hash="note-id"), app_factory)
 
         self.dependencies.confirm.assert_called_once_with(
             "Note note-id is empty. Delete it?", default=False
@@ -262,7 +262,7 @@ Body with #new-tag and #existing.
             editor_factory=lambda _config, _dependencies: Mock(spec=Editor),
         )
 
-        cmd_notes_edit(SimpleNamespace(hash="note-id"), app_factory)
+        edit_note(SimpleNamespace(hash="note-id"), app_factory)
 
         note_store.delete.assert_not_called()
         note_store.update.assert_called_once_with("note-id", original_content)
@@ -275,7 +275,7 @@ Body with #new-tag and #existing.
             note_store,
         )
 
-        cmd_notes_make(
+        make_note(
             SimpleNamespace(
                 note="Use #helloworld, #this-great-day and #code!",
                 file=None,

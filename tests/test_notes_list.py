@@ -3,7 +3,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock
 
-from jour_cli.cmd.notes._list import cmd_notes_list
+from jour_cli.cmd.list import list_notes
 from jour_cli.storage.note_store import Note
 
 
@@ -17,7 +17,7 @@ class NotesListTests(unittest.TestCase):
         self.app_factory.get_note_store.return_value = self.note_store
 
     def test_archived_notes_are_hidden_by_default(self):
-        cmd_notes_list(SimpleNamespace(show_archived=False), self.app_factory)
+        list_notes(SimpleNamespace(show_archived=False), self.app_factory)
 
         output = [
             call.args[0]
@@ -29,7 +29,7 @@ class NotesListTests(unittest.TestCase):
         self.assertNotIn("archived body", output[0])
 
     def test_show_archived_includes_archived_notes(self):
-        cmd_notes_list(SimpleNamespace(show_archived=True), self.app_factory)
+        list_notes(SimpleNamespace(show_archived=True), self.app_factory)
 
         output = [
             call.args[0]
@@ -40,7 +40,7 @@ class NotesListTests(unittest.TestCase):
         self.assertIn("active", output[1])
 
     def test_jmespath_query_receives_visible_structured_notes(self):
-        cmd_notes_list(
+        list_notes(
             SimpleNamespace(
                 show_archived=False,
                 jmespath_query="[?contains(body, 'active')].{id: id, tags: tags}",

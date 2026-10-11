@@ -1,9 +1,9 @@
 from jour_cli.app_factory import AppFactory
-from ...shared.note_content import _has_note_body
-from ...shared.note_input import _resolve_filename_from_history
+from jour_cli.shared.note_content import _has_note_body
+from jour_cli.shared.note_input import _resolve_filename_from_history
 
 
-def cmd_notes_edit(args, app_factory: AppFactory):
+def edit_note(args, app_factory: AppFactory):
     config = app_factory.get_config()
     dependencies = app_factory.dependencies
     note_store = app_factory.get_note_store(config)
