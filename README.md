@@ -23,6 +23,7 @@ This script checks for `pipx` (installing it via Homebrew if missing), installs 
 
 ## Commands
 
+* **`jour --version`**: Display the installed Jour version.
 * **`jour make`**: Create a new note. Pass text via `-n`/`--note`, pipe via stdin (`cat file.txt | jour make`), or open your default editor (`$VISUAL` or `$EDITOR`). Empty bodies are discarded.
 * **`jour list`**: Display notes chronologically with hash, tags, and content preview. Add `--show-archived` to include archived notes, or use `-q`/`--query` with a JMESPath expression to output structured records as JSON.
 * **`jour archive <hash>`**: Hide a note from default lists by tagging it `jour-archive`. Use `jour archive --undo <hash>` to restore it.

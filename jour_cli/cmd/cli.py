@@ -1,4 +1,5 @@
 import sqlite3
+from importlib.metadata import version as package_version
 from typing import Any, Callable, Optional
 
 import typer
@@ -31,8 +32,21 @@ app.add_typer(notes_app, name="notes")
 app.add_typer(tags_app, name="tags")
 
 
+def version_callback(value: bool) -> None:
+    if value:
+        typer.echo(f"jour {package_version('jour-cli')}")
+        raise typer.Exit()
+
+
 @app.callback()
 def configure_app(
+    version: bool = typer.Option(
+        False,
+        "--version",
+        callback=version_callback,
+        is_eager=True,
+        help="Show the version and exit",
+    ),
     global_mode: bool = typer.Option(
         False, "-g", "--global", help="Use the global journal instead of repo-local data"
     ),

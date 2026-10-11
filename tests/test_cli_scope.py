@@ -1,4 +1,5 @@
 import unittest
+from importlib.metadata import version as package_version
 from unittest.mock import patch
 
 from typer.testing import CliRunner
@@ -7,6 +8,15 @@ from jour_cli.cmd import cli
 
 
 class CliScopeTests(unittest.TestCase):
+    def test_version_option_displays_installed_version_without_configuring_app(self):
+        runner = CliRunner()
+        with patch.object(cli.app_factory, "set_global_mode") as set_global_mode:
+            result = runner.invoke(cli.app, ["--version"])
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertEqual(result.output.strip(), f"jour {package_version('jour-cli')}")
+        set_global_mode.assert_not_called()
+
     def test_global_flag_selects_global_scope_before_command_execution(self):
         runner = CliRunner()
         with patch.object(cli.app_factory, "set_global_mode") as set_global_mode:
