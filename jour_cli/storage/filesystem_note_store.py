@@ -86,13 +86,23 @@ class FileSystemNoteStore(NoteStore):
         return matches
 
     def tag_counts(self) -> List[Tuple[str, int]]:
+        self._refresh_tag_index()
         return self.tag_index.tag_counts()
 
     def notes_for_tag(self, tag: str) -> List[str]:
+        self._refresh_tag_index()
         return [
             self.dependencies.splitext(filename)[0]
             for filename in self.tag_index.notes_for_tag(tag)
         ]
+
+    def _refresh_tag_index(self) -> None:
+        for filepath in self.dependencies.list_files(
+            f"*.{self.extension}", self.storage
+        ):
+            content = self.dependencies.read_file(filepath)
+            tags, _ = _parse_note_content(content)
+            self.tag_index.index_note(filepath, tags)
 
     def _filepath(self, note_id: str) -> str:
         if not note_id or self.dependencies.basename(note_id) != note_id:

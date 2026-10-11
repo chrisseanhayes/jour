@@ -9,7 +9,8 @@ A minimal, fast, command-line journaling tool written in Python.
 - **`jour notes cat <hash>`**: View the full content and YAML front matter of a specific note by its hash identifier (the extension-free ID shown by `notes list`).
 - **`jour notes delete <hash>`**: Delete a specific note from your storage and the tag index.
 - **`jour notes edit <hash>`**: Open a specific journal entry for editing in the system's default editor. The editor is determined by your configuration or falls back to the system default (e.g., `vi` or `nano`).
-- **`jour tags list`**: List all tags used across your notes. Powered by a local SQLite index for O(1) instantaneous lookups.
+- **Hashtag tags**: Whole-word hashtags in note bodies (for example `#helloworld` or `#this-great-day`) are indexed as tags without the leading `#`, alongside tags supplied with `--tag`.
+- **`jour tags list`**: List all tags used across your notes. The local SQLite index is refreshed from note files before tag queries, so tags added by editors that return before saving are included.
 - **`jour tags show <tag>`**: Show all notes associated with a specific tag.
 - **`jour search <query>`**: Fast, grep-based full-text search across all your journal entries.
 

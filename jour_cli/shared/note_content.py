@@ -1,5 +1,14 @@
 import ast
+import re
 from typing import List, Tuple
+
+
+_HASHTAG_PATTERN = re.compile(r"(?<![\w#])#([\w]+(?:-[\w]+)*)(?![\w-])")
+
+
+def _extract_hashtags(text: str) -> List[str]:
+    """Extract whole-word hashtags without their leading hash symbol."""
+    return list(dict.fromkeys(_HASHTAG_PATTERN.findall(text)))
 
 
 def _build_note_content(
@@ -37,7 +46,7 @@ def _parse_note_content(content: str) -> Tuple[List[str], str]:
                     pass
     else:
         body = content.strip()
-    return tags, body
+    return list(dict.fromkeys(tags + _extract_hashtags(body))), body
 
 
 def _get_body_preview(body: str, max_length: int = 40) -> str:

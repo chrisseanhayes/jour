@@ -1,4 +1,6 @@
 import os
+import sqlite3
+import tempfile
 import unittest
 from datetime import datetime
 from io import StringIO
@@ -10,10 +12,11 @@ from jour_cli.cmd.notes._make import cmd_notes_make
 from jour_cli.config import _default_editor, load_config
 from jour_cli.history import log_command, read_history
 from jour_cli.shared.dependencies import Dependencies, DependenciesFactory
-from jour_cli.shared.editor import get_editor
+from jour_cli.shared.editor import Editor, get_editor
 from jour_cli.storage.filesystem_note_store import FileSystemNoteStore
 from jour_cli.storage.factory import FileSystemNoteStoreFactory, build_note_store
 from jour_cli.storage.note_store import NoteStore, TagIndex
+from jour_cli.storage.sqlite_tag_index import SQLiteTagIndex
 
 
 class RuntimeInjectionTests(unittest.TestCase):
@@ -168,6 +171,60 @@ class RuntimeInjectionTests(unittest.TestCase):
         tag_index.index_note.assert_called_once_with(
             "/tmp/notes/20261010163840_12345678.jmd", ["tag"]
         )
+
+    def test_tag_queries_refresh_hashtags_saved_after_editor_returns(self):
+        with tempfile.TemporaryDirectory() as directory:
+            notes_path = os.path.join(directory, "notes")
+            database_path = os.path.join(directory, "jour.db")
+            dependencies = Dependencies()
+            tag_index = SQLiteTagIndex(
+                database_path,
+                dependencies,
+                sqlite3.connect,
+            )
+            note_store = FileSystemNoteStore(
+                notes_path,
+                dependencies=dependencies,
+                tag_index=tag_index,
+            )
+            note_id = note_store.create("---\ntags: []\n---\n\n", [])
+            note_path = os.path.join(notes_path, f"{note_id}.jmd")
+
+            # The editor may save after notes make/edit has already returned.
+            with open(note_path, "w") as note_file:
+                note_file.write("---\ntags: []\n---\n\nLater #saved-tag")
+
+            self.assertEqual(note_store.notes_for_tag("saved-tag"), [note_id])
+            self.assertEqual(note_store.tag_counts(), [("saved-tag", 1)])
+
+    def test_edit_indexes_hashtags_from_saved_note_content(self):
+        with tempfile.TemporaryDirectory() as directory:
+            notes_path = os.path.join(directory, "notes")
+            database_path = os.path.join(directory, "jour.db")
+            dependencies = Dependencies()
+            tag_index = SQLiteTagIndex(
+                database_path,
+                dependencies,
+                sqlite3.connect,
+            )
+            note_store = FileSystemNoteStore(
+                notes_path,
+                dependencies=dependencies,
+                tag_index=tag_index,
+            )
+            note_id = note_store.create("---\ntags: []\n---\n\n", [])
+            editor = Mock(spec=Editor)
+            editor.open.side_effect = lambda filepath: dependencies.write_file(
+                filepath,
+                "---\ntags: []\n---\n\nEdited with #edited-tag",
+            )
+
+            self.assertTrue(note_store.edit(note_id, editor))
+
+            self.assertEqual(
+                tag_index.notes_for_tag("edited-tag"),
+                [f"{note_id}.jmd"],
+            )
 
     def test_note_creation_uses_injected_clock_and_configured_date_format(self):
         dependencies = Mock(spec=Dependencies)

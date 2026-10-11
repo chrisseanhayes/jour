@@ -7,6 +7,7 @@ from jour_cli.cmd.notes._make import cmd_notes_make
 from jour_cli.shared.dependencies import Dependencies
 from jour_cli.shared.dependencies import DependenciesFactory
 from jour_cli.shared.editor import CommandEditor, Editor, get_editor
+from jour_cli.shared.note_content import _extract_hashtags, _parse_note_content
 from jour_cli.shared.note_input import _resolve_note_input
 from jour_cli.storage import NoteStore
 
@@ -18,6 +19,28 @@ class ResolveNoteInputTests(unittest.TestCase):
         self.dependencies_factory.create.return_value = self.dependencies
         self.dependencies.stdin_is_interactive.return_value = False
         self.dependencies.split_command.side_effect = lambda command: [command]
+
+    def test_extract_hashtags_matches_whole_words_and_hyphenated_tags(self):
+        self.assertEqual(
+            _extract_hashtags(
+                "Use (#helloworld), #this-great-day and #code! "
+                "not embedded#no or ##heading or #two--parts."
+            ),
+            ["helloworld", "this-great-day", "code"],
+        )
+
+    def test_parse_note_content_includes_body_hashtags_with_front_matter_tags(self):
+        content = """---
+tags: ['existing']
+---
+
+Body with #new-tag and #existing.
+"""
+
+        tags, body = _parse_note_content(content)
+
+        self.assertEqual(tags, ["existing", "new-tag"])
+        self.assertIn("#new-tag", body)
 
     def create_app_factory(self, config, note_store, editor_factory=None):
         return AppFactory(
@@ -147,6 +170,28 @@ class ResolveNoteInputTests(unittest.TestCase):
         )
 
         note_store.edit.assert_called_once_with("note-id", editor)
+
+    def test_make_indexes_hashtags_in_note_body(self):
+        self.dependencies.now.return_value.strftime.return_value = "date"
+        note_store = Mock(spec=NoteStore)
+        app_factory = self.create_app_factory(
+            {"front_matter": {"layout": "default"}},
+            note_store,
+        )
+
+        cmd_notes_make(
+            SimpleNamespace(
+                note="Use #helloworld, #this-great-day and #code!",
+                file=None,
+                tag="manual",
+            ),
+            app_factory,
+        )
+
+        self.assertEqual(
+            note_store.create.call_args.args[1],
+            ["manual", "helloworld", "this-great-day", "code"],
+        )
 
 
 if __name__ == "__main__":
