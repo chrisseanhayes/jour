@@ -196,6 +196,31 @@ class RuntimeInjectionTests(unittest.TestCase):
 
             self.assertEqual(note_store.notes_for_tag("saved-tag"), [note_id])
             self.assertEqual(note_store.tag_counts(), [("saved-tag", 1)])
+            self.assertEqual(note_store.list()[0].tags, ["saved-tag"])
+
+    def test_note_list_includes_body_hashtags_from_tag_index(self):
+        with tempfile.TemporaryDirectory() as directory:
+            notes_path = os.path.join(directory, "notes")
+            database_path = os.path.join(directory, "jour.db")
+            dependencies = Dependencies()
+            tag_index = SQLiteTagIndex(
+                database_path,
+                dependencies,
+                sqlite3.connect,
+            )
+            note_store = FileSystemNoteStore(
+                notes_path,
+                dependencies=dependencies,
+                tag_index=tag_index,
+            )
+            note_id = note_store.create(
+                "---\ntags: ['front-matter-tag']\n---\n\nBody with #body-tag",
+                ["front-matter-tag", "body-tag"],
+            )
+
+            note = note_store.list()[0]
+            self.assertEqual(note.id, note_id)
+            self.assertEqual(note.tags, ["front-matter-tag", "body-tag"])
 
     def test_edit_indexes_hashtags_from_saved_note_content(self):
         with tempfile.TemporaryDirectory() as directory:

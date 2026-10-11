@@ -1,5 +1,5 @@
 import sqlite3
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, Dict, List, Tuple
 
 from jour_cli.shared.dependencies import Dependencies
 
@@ -91,6 +91,21 @@ class SQLiteTagIndex:
                 (tag,),
             ).fetchall()
         return [row["filename"] for row in rows]
+
+    def tags_by_note(self) -> Dict[str, List[str]]:
+        with self._get_conn() as conn:
+            rows = conn.execute(
+                """
+                SELECT n.filename, t.tag
+                FROM notes n
+                JOIN tags t ON t.note_id = n.id
+                ORDER BY n.filename DESC, t.id ASC
+                """
+            ).fetchall()
+        tags_by_note: Dict[str, List[str]] = {}
+        for row in rows:
+            tags_by_note.setdefault(row["filename"], []).append(row["tag"])
+        return tags_by_note
 
     def delete_note(self, filename: str) -> None:
         with self._get_conn() as conn:

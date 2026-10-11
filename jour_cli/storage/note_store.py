@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import List, Optional, Protocol, Tuple
+from typing import Dict, List, Optional, Protocol, Tuple
 
 from jour_cli.shared.editor import Editor
 
@@ -23,6 +23,9 @@ class TagIndex(Protocol):
 
     def notes_for_tag(self, tag: str) -> List[str]:
         """Return filenames carrying a tag."""
+
+    def tags_by_note(self) -> Dict[str, List[str]]:
+        """Return tags grouped by note filename."""
 
     def delete_note(self, filename: str) -> None:
         """Remove a note from the index."""

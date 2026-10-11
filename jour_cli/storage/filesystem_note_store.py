@@ -39,15 +39,17 @@ class FileSystemNoteStore(NoteStore):
         return self.dependencies.read_file(filepath)
 
     def list(self) -> List[Note]:
+        self._refresh_tag_index()
+        tags_by_note = self.tag_index.tags_by_note()
         paths = self.dependencies.list_files(f"*.{self.extension}", self.storage)
         notes = []
         for filepath in paths:
             content = self.dependencies.read_file(filepath)
-            tags, _ = _parse_note_content(content)
+            filename = self.dependencies.basename(filepath)
             note_id = self.dependencies.splitext(
-                self.dependencies.basename(filepath)
+                filename
             )[0]
-            notes.append(Note(note_id, content, tags))
+            notes.append(Note(note_id, content, tags_by_note.get(filename, [])))
         return notes
 
     def update(self, note_id: str, content: str) -> bool:
