@@ -7,6 +7,9 @@ IMAGE="jour-cli-test"
 echo "==> Building image: $IMAGE"
 podman build -t "$IMAGE" -f Containerfile .
 
+echo "\n==> Running note input tests"
+podman run --rm "$IMAGE" python3 -m unittest discover -s tests -p 'test_*.py'
+
 echo "\n==> Running smoke tests"
 podman run --rm "$IMAGE" sh tests/smoke.sh
 echo "\n==> Checking history log for smoke tests"

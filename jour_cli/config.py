@@ -1,32 +1,35 @@
-import os
-import sys
-
+from copy import deepcopy
 import yaml
 
-JOUR_DIR = os.path.expanduser("~/.jour")
-CONFIG_PATH = os.path.join(JOUR_DIR, ".jourconfig")
+from jour_cli.shared.dependencies import Dependencies
 
-def _default_editor():
+
+def _default_editor(dependencies: Dependencies) -> str:
     # Respect user's preferred editor env vars first
     return (
-        os.environ.get("VISUAL")
-        or os.environ.get("EDITOR")
-        or ("open -t" if sys.platform == "darwin" else "xdg-open")
+        dependencies.get_environment_variable("VISUAL")
+        or dependencies.get_environment_variable("EDITOR")
+        or ("open -t" if dependencies.is_macos() else "xdg-open")
     )
+
 
 DEFAULT_CONFIG = {
     "storage": {
         "path": "~/.jour",
-        "extension": "jmd"
+        "extension": "jmd",
+    },
+    "database": {
+        "path": "~/.jour/jour.db",
     },
     "editor": {
-        "command": None  # resolved at runtime via _default_editor()
+        "command": None,  # resolved at runtime via _default_editor()
     },
     "front_matter": {
         "layout": "default",
-        "date_format": "%Y-%m-%d %H:%M"
-    }
+        "date_format": "%Y-%m-%d %H:%M",
+    },
 }
+
 
 def deep_merge(base, override):
     result = base.copy()
@@ -37,17 +40,18 @@ def deep_merge(base, override):
             result[key] = value
     return result
 
-def load_config():
-    os.makedirs(JOUR_DIR, exist_ok=True)
-    config = DEFAULT_CONFIG.copy()
-    if os.path.exists(CONFIG_PATH):
-        with open(CONFIG_PATH, "r") as f:
-            user_config = yaml.safe_load(f)
-            if isinstance(user_config, dict):
-                config = deep_merge(config, user_config)
-    from jour_cli.db import init_db
-    init_db()
+
+def load_config(dependencies: Dependencies):
+    jour_dir = dependencies.join(dependencies.expanduser("~"), ".jour")
+    config_path = dependencies.join(jour_dir, ".jourconfig")
+    dependencies.makedirs(jour_dir, exist_ok=True)
+    config = deepcopy(DEFAULT_CONFIG)
+    if dependencies.exists(config_path):
+        user_config = yaml.safe_load(dependencies.read_file(config_path))
+        if isinstance(user_config, dict):
+            config = deep_merge(config, user_config)
     return config
 
-def get_storage_path(config):
-    return os.path.expanduser(config.get("storage", {}).get("path", "~/.jour"))
+
+def get_storage_path(config, dependencies: Dependencies):
+    return dependencies.expanduser(config.get("storage", {}).get("path", "~/.jour"))

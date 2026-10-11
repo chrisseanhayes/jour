@@ -6,7 +6,7 @@ A minimal, fast, command-line journaling tool written in Python.
 
 - **`jour notes make`**: Create a new note. You can pass the note body directly via the `-n`/`--note` flag, pipe it via stdin (e.g., `cat file.txt | jour notes make`), or simply run the command to open your default editor (`$VISUAL` or `$EDITOR`).
 - **`jour notes list`**: Display a list of all your notes, sorted chronologically. Shows the note hash, applied tags, and a brief preview of the content.
-- **`jour notes cat <hash>`**: View the full content and YAML front matter of a specific note by its hash identifier.
+- **`jour notes cat <hash>`**: View the full content and YAML front matter of a specific note by its hash identifier (the extension-free ID shown by `notes list`).
 - **`jour notes delete <hash>`**: Delete a specific note from your storage and the tag index.
 - **`jour notes edit <hash>`**: Open a specific journal entry for editing in the system's default editor. The editor is determined by your configuration or falls back to the system default (e.g., `vi` or `nano`).
 - **`jour tags list`**: List all tags used across your notes. Powered by a local SQLite index for O(1) instantaneous lookups.
@@ -15,9 +15,10 @@ A minimal, fast, command-line journaling tool written in Python.
 
 ## Storage & Architecture
 
-- **Flat Files**: Notes are stored as flat files (`~/.jour/*.jmd`) with YAML front matter, ensuring your data is portable, human-readable, and free from vendor lock-in.
-- **Robust Naming**: Files use a chronological prefix and a UUID suffix (`{YYYYmmddHHMMSS}_{8-char uuid hex}.jmd`), making them easily sortable chronologically while completely preventing overwrite collisions in tight automation loops.
-- **SQLite Tag Index**: Tag queries (`tags list` and `tags show`) are backed by a lightweight SQLite index (`~/.jour/jour.db`). This avoids O(n) file parsing and keeps queries instant as your journal grows.
+- **Replaceable note storage**: Commands use the `NoteStore` CRUD interface rather than performing note persistence themselves. The default `FileSystemNoteStore` keeps notes as flat files (`~/.jour/*.jmd`) with YAML front matter; note-store, editor, configuration, and dependency factories are wired at the CLI composition root and can be replaced in tests.
+- **Robust identifiers**: Notes are identified by the extension-free ID shown by `notes list`, based on a chronological prefix and UUID suffix (`{YYYYmmddHHMMSS}_{8-char uuid hex}`). The filesystem backend adds the configured extension when storing notes.
+- **SQLite Tag Index**: The default filesystem store maintains tag queries (`tags list` and `tags show`) in the lightweight SQLite index (`~/.jour/jour.db`). Its location can be changed with `database.path` in `~/.jour/.jourconfig`.
+- **Code organization**: Command handlers and CLI wiring live in `jour_cli/cmd/`; storage interfaces and implementations live in `jour_cli/storage/`; command history is in `jour_cli/history.py`; app configuration remains in `jour_cli/config.py`. Loading configuration does not initialize the tag-index database.
 - **Testing**: Testing is performed inside fresh Podman containers to ensure total environment isolation from the host machine, matching the project's strict dependency rules.
 
 ## Installation
