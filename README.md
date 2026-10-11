@@ -2,6 +2,20 @@
 
 A minimal, fast, command-line journaling tool written in Python.
 
+☕️ [Buy me a coffee](https://www.buymeacoffee.com/hayescs4) 💸
+
+> **Alpha software:** Jour is still in active development. Commands, configuration, and storage formats may change between releases.
+
+## Installation
+
+The CLI requires `pipx` for a clean, isolated installation without breaking system Python packages.
+
+To install or update the tool:
+```bash
+./install.sh
+```
+This script will check for `pipx` (installing it via Homebrew if missing), and then install `jour` into `~/.local/bin`. Ensure that directory is in your `$PATH`.
+
 ## Features
 
 - **`jour make`**: Create a new note. You can pass the note body directly via the `-n`/`--note` flag, pipe it via stdin (e.g., `cat file.txt | jour make`), or simply run the command to open your default editor (`$VISUAL` or `$EDITOR`). Empty note bodies are not saved; an empty note left in the editor is discarded.
@@ -27,16 +41,6 @@ A minimal, fast, command-line journaling tool written in Python.
 - **Storage scope**: Repo-local notes and their SQLite tag index are stored together in `./.jour`. Add `.jour/` to the repository's `.gitignore` to keep journal content out of commits. `~/.jour/.jourignore` contains absolute repository paths that should always use global data.
 - **Code organization**: Command handlers and CLI wiring live in `jour_cli/cmd/`; storage interfaces and implementations live in `jour_cli/storage/`; command history is in `jour_cli/history.py`; app configuration remains in `jour_cli/config.py`. Loading configuration does not initialize the tag-index database.
 - **Testing**: Testing is performed inside fresh Podman containers to ensure total environment isolation from the host machine, matching the project's strict dependency rules.
-
-## Installation
-
-The CLI requires `pipx` for a clean, isolated installation without breaking system Python packages.
-
-To install or update the tool:
-```bash
-./install.sh
-```
-This script will check for `pipx` (installing it via Homebrew if missing), and then install `jour` into `~/.local/bin`. Ensure that directory is in your `$PATH`.
 
 ## Uninstallation
 
