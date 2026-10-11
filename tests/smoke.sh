@@ -65,6 +65,80 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# 5a. notes list hides archived notes unless requested
+# ---------------------------------------------------------------------------
+echo "\n[5a] notes list archived notes"
+jour notes make --note "archived smoke note" --tag "jour-archive"
+jour notes make --note "ordinary archive tag smoke note" --tag "archive"
+OUTPUT=$(jour notes list)
+if echo "$OUTPUT" | grep -q "archived smoke note"; then
+    fail "notes list included an archived note by default"
+else
+    pass "notes list hides archived notes by default"
+fi
+if echo "$OUTPUT" | grep -q "ordinary archive tag smoke note"; then
+    pass "notes list includes notes tagged 'archive'"
+else
+    fail "notes list hid a note tagged 'archive'"
+fi
+OUTPUT=$(jour notes list --show-archived)
+if echo "$OUTPUT" | grep -q "archived smoke note"; then
+    pass "--show-archived includes archived notes"
+else
+    fail "--show-archived did not include an archived note"
+fi
+
+# ---------------------------------------------------------------------------
+# 5b. notes archive tags a note and hides it from the default list
+# ---------------------------------------------------------------------------
+echo "\n[5b] notes archive"
+jour notes make --note "notes archive command smoke note" --tag "archive_test"
+ARCHIVE_NOTE=$(ls -t ~/.jour/*.jmd | head -1)
+ARCHIVE_HASH=$(basename "$ARCHIVE_NOTE" .jmd)
+OUTPUT=$(jour notes archive "$ARCHIVE_HASH")
+if echo "$OUTPUT" | grep -q "archived"; then
+    pass "notes archive confirms the note was archived"
+else
+    fail "notes archive did not confirm archiving: $OUTPUT"
+fi
+OUTPUT=$(jour notes list)
+if echo "$OUTPUT" | grep -q "notes archive command smoke note"; then
+    fail "notes archive did not hide the note from the default list"
+else
+    pass "notes archive hides the note from the default list"
+fi
+OUTPUT=$(jour notes list --show-archived)
+if echo "$OUTPUT" | grep -q "notes archive command smoke note"; then
+    pass "archived note appears with --show-archived"
+else
+    fail "archived note missing with --show-archived"
+fi
+OUTPUT=$(jour tags show jour-archive)
+if echo "$OUTPUT" | grep -q "$ARCHIVE_HASH"; then
+    pass "archived note is indexed under jour-archive"
+else
+    fail "archived note missing from jour-archive index"
+fi
+OUTPUT=$(jour notes archive --undo "$ARCHIVE_HASH")
+if echo "$OUTPUT" | grep -q "unarchived"; then
+    pass "notes archive --undo confirms the note was unarchived"
+else
+    fail "notes archive --undo did not confirm unarchiving: $OUTPUT"
+fi
+OUTPUT=$(jour notes list)
+if echo "$OUTPUT" | grep -q "notes archive command smoke note"; then
+    pass "unarchived note returns to the default list"
+else
+    fail "unarchived note is still hidden from the default list"
+fi
+OUTPUT=$(jour tags show jour-archive)
+if echo "$OUTPUT" | grep -q "$ARCHIVE_HASH"; then
+    fail "unarchived note remains indexed under jour-archive"
+else
+    pass "unarchived note is removed from jour-archive index"
+fi
+
+# ---------------------------------------------------------------------------
 # 6. tags list
 # ---------------------------------------------------------------------------
 echo "\n[6] tags list"

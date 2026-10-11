@@ -5,7 +5,8 @@ A minimal, fast, command-line journaling tool written in Python.
 ## Features
 
 - **`jour notes make`**: Create a new note. You can pass the note body directly via the `-n`/`--note` flag, pipe it via stdin (e.g., `cat file.txt | jour notes make`), or simply run the command to open your default editor (`$VISUAL` or `$EDITOR`). Empty note bodies are not saved; an empty note left in the editor is discarded.
-- **`jour notes list`**: Display a list of all your notes, sorted chronologically. Shows the note hash, applied tags, and a brief preview of the content.
+- **`jour notes list`**: Display notes, sorted chronologically, with their hash, applied tags, and a brief content preview. Notes tagged `jour-archive` are hidden by default; use `jour notes list --show-archived` to include them.
+- **`jour notes archive <hash>`**: Tag a note with `jour-archive` so it is hidden from `notes list` by default. Use `jour notes archive --undo <hash>` to remove that tag and restore the note to the default list. The note's other tags and front-matter fields are preserved.
 - **`jour notes cat <hash>`**: View the full content and YAML front matter of a specific note by its hash identifier (the extension-free ID shown by `notes list`).
 - **`jour notes delete <hash>`**: Delete a specific note from your storage and the tag index.
 - **`jour notes edit <hash>`**: Open a specific journal entry for editing in the system's default editor. The editor is determined by your configuration or falls back to the system default (e.g., `vi` or `nano`). If the body is cleared, you are asked to confirm deletion; declining restores the previous note.

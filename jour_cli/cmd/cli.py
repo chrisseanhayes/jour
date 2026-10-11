@@ -9,6 +9,7 @@ from jour_cli.shared.dependencies import DefaultDependenciesFactory
 from jour_cli.shared.editor import get_editor
 from jour_cli.storage.factory import FileSystemNoteStoreFactory
 from jour_cli.cmd.notes import (
+    cmd_notes_archive,
     cmd_notes_cat,
     cmd_notes_delete,
     cmd_notes_edit,
@@ -49,9 +50,24 @@ def notes_make(
 
 
 @notes_app.command("list")
-def notes_list():
-    """List all notes."""
-    run_cmd("notes list", cmd_notes_list)
+def notes_list(
+    show_archived: bool = typer.Option(
+        False, "--show-archived", help="Include notes tagged 'jour-archive'"
+    ),
+):
+    """List notes, excluding those tagged 'jour-archive' by default."""
+    run_cmd("notes list", cmd_notes_list, show_archived=show_archived)
+
+
+@notes_app.command("archive")
+def notes_archive(
+    hash: str = typer.Argument(..., help="Note hash"),
+    undo: bool = typer.Option(
+        False, "--undo", help="Remove the 'jour-archive' tag from the note"
+    ),
+):
+    """Archive a note, or use --undo to remove its archive tag."""
+    run_cmd("notes archive", cmd_notes_archive, hash=hash, undo=undo)
 
 
 @notes_app.command("cat")
