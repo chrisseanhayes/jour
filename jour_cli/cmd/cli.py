@@ -12,6 +12,7 @@ from jour_cli.cmd.archive import archive_note
 from jour_cli.cmd.cat import cat_note
 from jour_cli.cmd.delete import delete_note
 from jour_cli.cmd.edit import edit_note
+from jour_cli.cmd.init import init_local_journal
 from jour_cli.cmd.list import list_notes
 from jour_cli.cmd.make import make_note
 from jour_cli.cmd.search import cmd_search
@@ -29,6 +30,16 @@ app_factory = AppFactory(
 )
 app.add_typer(notes_app, name="notes")
 app.add_typer(tags_app, name="tags")
+
+
+@app.callback()
+def configure_app(
+    global_mode: bool = typer.Option(
+        False, "-g", "--global", help="Use the global journal instead of repo-local data"
+    ),
+):
+    """Configure Jour's storage scope."""
+    app_factory.set_global_mode(global_mode)
 
 
 def run_cmd(cmd_name: str, cmd_func: Callable[..., Any], **kwargs: Any) -> Any:
@@ -109,6 +120,12 @@ app.command("archive")(notes_archive)
 app.command("cat")(notes_cat)
 app.command("delete")(notes_delete)
 app.command("edit")(notes_edit)
+
+
+@app.command()
+def init():
+    """Initialize repo-local Jour storage in the current Git repository."""
+    run_cmd("init", init_local_journal)
 
 
 @app.command()

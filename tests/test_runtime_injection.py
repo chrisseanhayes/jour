@@ -150,6 +150,7 @@ class RuntimeInjectionTests(unittest.TestCase):
 
     def test_filesystem_store_uses_injected_clock_uuid_and_file_operations(self):
         dependencies = Mock(spec=Dependencies)
+        dependencies.get_git_root.return_value = None
         dependencies.now.return_value = datetime(2026, 10, 10, 16, 38, 40)
         dependencies.new_uuid_hex.return_value = "12345678abcdef00"
         dependencies.join.side_effect = os.path.join
@@ -270,6 +271,7 @@ class RuntimeInjectionTests(unittest.TestCase):
 
     def test_note_creation_uses_injected_clock_and_configured_date_format(self):
         dependencies = Mock(spec=Dependencies)
+        dependencies.get_git_root.return_value = None
         dependencies.now.return_value = datetime(2026, 10, 10, 16, 38, 40)
         dependencies.stdin_is_interactive.return_value = False
         note_store = Mock(spec=NoteStore)

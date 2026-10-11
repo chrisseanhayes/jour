@@ -25,6 +25,7 @@ class Dependencies:
         exit_process: Callable[[int], NoReturn] = sys.exit,
         platform_name: Optional[str] = None,
         environment: Optional[Mapping[str, str]] = None,
+        working_directory: Optional[str] = None,
     ):
         self._os = os
         self._glob = glob
@@ -42,6 +43,7 @@ class Dependencies:
         self._exit_process = exit_process
         self._platform = platform_name if platform_name is not None else sys.platform
         self._environment = environment if environment is not None else os.environ
+        self._working_directory = working_directory
 
     def now(self) -> datetime:
         """Return the current time from the configured clock."""
@@ -74,6 +76,17 @@ class Dependencies:
     def path(self, path: str) -> str:
         """Return the absolute path."""
         return self._os.path.abspath(path)
+
+    def get_git_root(self) -> Optional[str]:
+        """Find the nearest parent directory containing a Git metadata entry."""
+        current = self.path(self._working_directory or self._os.getcwd())
+        while True:
+            if self.exists(self.join(current, ".git")):
+                return current
+            parent = self.dirname(current)
+            if parent == current:
+                return None
+            current = parent
     
     def basename(self, path: str) -> str:
         """Get the base name of a path."""

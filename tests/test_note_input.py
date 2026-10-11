@@ -22,6 +22,7 @@ class ResolveNoteInputTests(unittest.TestCase):
         self.dependencies = Mock(spec=Dependencies)
         self.dependencies_factory = Mock(spec=DependenciesFactory)
         self.dependencies_factory.create.return_value = self.dependencies
+        self.dependencies.get_git_root.return_value = None
         self.dependencies.stdin_is_interactive.return_value = False
         self.dependencies.split_command.side_effect = lambda command: [command]
 
