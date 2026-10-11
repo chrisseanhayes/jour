@@ -1,7 +1,3 @@
-Here is an improved, streamlined version of the README designed to be clear, direct, and easy to scan.
-
----
-
 # jour
 
 A fast, minimal command-line journaling tool written in Python[cite: 1].
