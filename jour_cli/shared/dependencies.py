@@ -77,6 +77,10 @@ class Dependencies:
         """Return the absolute path."""
         return self._os.path.abspath(path)
 
+    def realpath(self, path: str) -> str:
+        """Resolve symlinks and return the canonical path."""
+        return self._os.path.realpath(path)
+
     def get_git_root(self) -> Optional[str]:
         """Find the nearest parent directory containing a Git metadata entry."""
         current = self.path(self._working_directory or self._os.getcwd())
@@ -135,8 +139,10 @@ class Dependencies:
         """Remove file."""
         self._os.remove(filepath)
 
-    def run_command(self, cmd: list) -> None:
-        """Run shell command."""
+    def run_command(self, cmd: list, *, capture_output: bool = False):
+        """Run a command, optionally capturing its text output."""
+        if capture_output:
+            return self._subprocess.run(cmd, capture_output=True, text=True)
         return self._subprocess.run(cmd)
 
     def stdin_read(self) -> str:

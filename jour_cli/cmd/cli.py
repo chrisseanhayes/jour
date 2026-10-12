@@ -23,10 +23,12 @@ from jour_cli.cmd.tags import cmd_tags_list, cmd_tags_show
 from jour_cli.cmd.prune import cmd_prune
 from jour_cli.cmd.rebuild import cmd_rebuild
 from jour_cli.cmd.index import cmd_index_status
+from jour_cli.cmd.git import cmd_git_commit, cmd_git_init
 
 app = typer.Typer()
 notes_app = typer.Typer()
 tags_app = typer.Typer()
+git_app = typer.Typer()
 app_factory = AppFactory(
     DefaultDependenciesFactory(),
     load_config,
@@ -35,6 +37,7 @@ app_factory = AppFactory(
 )
 app.add_typer(notes_app, name="notes")
 app.add_typer(tags_app, name="tags")
+app.add_typer(git_app, name="git")
 
 
 @dataclass(frozen=True)
@@ -224,6 +227,22 @@ app.command("edit")(notes_edit)
 def init():
     """Initialize repo-local Jour storage in the current Git repository."""
     run_cmd(("init",), init_local_journal)
+
+
+@git_app.command("init")
+def git_init():
+    """Initialize Git tracking for the active Jour note files."""
+    run_cmd(("git", "init"), cmd_git_init)
+
+
+@git_app.command("commit")
+def git_commit(
+    message: str = typer.Option(
+        "Update notes", "-m", "--message", help="Commit message"
+    ),
+):
+    """Commit changes to Jour note files only."""
+    run_cmd(("git", "commit"), cmd_git_commit, message=message)
 
 
 @app.command()

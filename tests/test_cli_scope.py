@@ -84,6 +84,24 @@ class CliScopeTests(unittest.TestCase):
         self.assertEqual(result.exit_code, 0, result.output)
         set_global_mode.assert_called_once_with(False)
 
+    def test_global_mode_is_supported_for_git_commands(self):
+        runner = CliRunner()
+        for command, handler in (
+            (["-g", "git", "init"], "cmd_git_init"),
+            (["-g", "git", "commit"], "cmd_git_commit"),
+        ):
+            with self.subTest(command=command):
+                with patch.object(
+                    cli.app_factory, "set_global_mode"
+                ) as set_global_mode:
+                    with patch.object(cli.app_factory, "log_command"):
+                        with patch.object(cli, handler) as command_handler:
+                            result = runner.invoke(cli.app, command)
+
+                self.assertEqual(result.exit_code, 0, result.output)
+                set_global_mode.assert_called_once_with(True)
+                command_handler.assert_called_once()
+
     def test_rebuild_command_is_registered(self):
         runner = CliRunner()
         with patch.object(cli.app_factory, "log_command"):

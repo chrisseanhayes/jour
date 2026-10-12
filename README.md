@@ -51,6 +51,7 @@ This script checks for `pipx` (installing it via Homebrew if missing), installs 
 * **`jour rebuild`**: Rebuild the tag and key/value indexes from the current note files, removing entries for notes that were deleted outside Jour.
 * **`jour index --status`**: Show when the index was last rebuilt and how many indexed notes have been deleted from disk.
 * **`jour init`**: Explicitly initialize repo-local storage and its metadata index inside a Git repository.
+* **`jour git init`**: Initialize a dedicated Git repository in the active Jour storage directory. `jour git commit` commits changes to note files only (using the configured storage extension); metadata and other staged files are not included. Use `-m`/`--message` to set a commit message (default: `Update notes`). Add `-g` before the command to track the global journal instead.
 * **`jour tags list`**: List all tags used across your notes.
 * **`jour tags show <tag>`**: Display all notes associated with a specific tag.
 
