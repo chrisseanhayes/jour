@@ -9,7 +9,7 @@ from uuid import UUID
 
 from jour_cli.app_factory import AppFactory
 from jour_cli.cmd.make import make_note
-from jour_cli.config import _default_editor, load_config
+from jour_cli.config import StorageScope, _default_editor, load_config
 from jour_cli.history import log_command, read_history
 from jour_cli.shared.dependencies import Dependencies, DependenciesFactory
 from jour_cli.shared.editor import Editor, get_editor
@@ -125,6 +125,36 @@ class RuntimeInjectionTests(unittest.TestCase):
         connection_factory.assert_called_once_with("/tmp/jour.db")
         dependencies.makedirs.assert_called_once_with("/tmp", exist_ok=True)
         connection.executescript.assert_called_once()
+
+    def test_app_factory_resolves_location_once_until_invocation_mode_changes(self):
+        dependencies = Mock(spec=Dependencies)
+        dependencies.get_git_root.return_value = None
+        dependencies.expanduser.side_effect = lambda path: path.replace(
+            "~", "/home/test", 1
+        )
+        config = {
+            "storage": {"path": "~/.jour"},
+            "database": {"path": "~/.jour/jour.db"},
+        }
+        config_loader = Mock(return_value=config)
+        app_factory = AppFactory(
+            self.dependencies_factory(dependencies),
+            config_loader,
+            lambda _config, _dependencies: Mock(spec=NoteStore),
+            get_editor,
+        )
+
+        first_context = app_factory.get_location_context()
+        self.assertIs(app_factory.get_location_context(), first_context)
+        self.assertEqual(first_context.scope, StorageScope.GLOBAL)
+        config_loader.assert_called_once_with(dependencies)
+
+        app_factory.set_global_mode(True)
+        second_context = app_factory.get_location_context()
+
+        self.assertIsNot(second_context, first_context)
+        self.assertEqual(second_context.scope, StorageScope.GLOBAL)
+        self.assertEqual(config_loader.call_count, 2)
 
     def test_app_factory_injects_tag_index_factory(self):
         dependencies = Mock(spec=Dependencies)

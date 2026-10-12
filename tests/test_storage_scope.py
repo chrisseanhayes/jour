@@ -4,7 +4,15 @@ import unittest
 from io import StringIO
 from unittest.mock import patch
 
-from jour_cli.config import initialize_local_storage, resolve_storage_scope
+from jour_cli.config import (
+    StoragePrompt,
+    StorageScope,
+    detect_storage_location,
+    initialize_local_context,
+    initialize_local_storage,
+    resolve_storage_context,
+    resolve_storage_scope,
+)
 from jour_cli.shared.dependencies import Dependencies
 
 
@@ -83,12 +91,39 @@ class StorageScopeTests(unittest.TestCase):
 
     def test_global_override_skips_repository_detection(self):
         with patch.object(self.dependencies, "get_git_root") as get_git_root:
-            config = resolve_storage_scope(
+            context = resolve_storage_context(
                 self.config, self.dependencies, global_mode=True
             )
 
         get_git_root.assert_not_called()
-        self.assertIs(config, self.config)
+        self.assertEqual(context.scope, StorageScope.GLOBAL)
+        self.assertEqual(context.config, self.config)
+        self.assertEqual(context.storage_path, os.path.join(self.home, ".jour"))
+        self.assertEqual(
+            context.database_path,
+            os.path.join(self.home, ".jour", "jour.db"),
+        )
+
+    def test_existing_local_directory_resolves_to_local_context(self):
+        local_storage = os.path.join(self.repo, ".jour")
+        os.makedirs(local_storage)
+
+        context = resolve_storage_context(self.config, self.dependencies)
+
+        self.assertEqual(context.scope, StorageScope.REPO_LOCAL)
+        self.assertEqual(context.storage_path, local_storage)
+        self.assertEqual(context.database_path, os.path.join(local_storage, "jour.db"))
+
+    def test_detection_requests_choice_without_prompting_or_creating_storage(self):
+        with patch.object(self.dependencies, "confirm") as confirm:
+            location = detect_storage_location(self.config, self.dependencies)
+
+        self.assertIsInstance(location, StoragePrompt)
+        self.assertEqual(location.repo_root, os.path.abspath(self.repo))
+        self.assertFalse(os.path.exists(os.path.join(self.repo, ".jour")))
+        self.assertFalse(os.path.exists(os.path.join(self.home, ".jour")))
+        confirm.assert_not_called()
+        self.assertEqual(self.stderr.getvalue(), "")
 
     def test_existing_local_directory_selects_local_data_without_prompt(self):
         local_storage = os.path.join(self.repo, ".jour")
@@ -123,6 +158,16 @@ class StorageScopeTests(unittest.TestCase):
                 ignore_file_handle.read(),
                 f"# global-only repositories\n{other_repo}\n",
             )
+
+    def test_init_returns_explicit_repo_local_context(self):
+        context = initialize_local_context(self.config, self.dependencies)
+
+        self.assertEqual(context.scope, StorageScope.REPO_LOCAL)
+        self.assertEqual(context.storage_path, os.path.join(self.repo, ".jour"))
+        self.assertEqual(
+            context.database_path,
+            os.path.join(self.repo, ".jour", "jour.db"),
+        )
 
     def test_init_requires_a_git_repository(self):
         self.dependencies.get_git_root = lambda: None

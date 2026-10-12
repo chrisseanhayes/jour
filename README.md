@@ -73,6 +73,20 @@ kvp:
 * **Repo-Local Journals**: Interactive commands prompt to use `./.jour` inside Git repositories. Answering no adds the path to `~/.jour/.jourignore`. Use `jour -g` to force global storage from inside a repo.
 * **Aliases**: Legacy `jour notes make/list/archive/cat/delete/edit` commands remain supported.
 
+## Execution Model
+
+Each invocation is handled as three related states:
+
+* **Command state** captures the normalized command path, positional arguments, and options; top-level and grouped aliases execute the same command handler.
+* **Location context** first detects global or repo-local scope without prompting or creating directories, then resolves any interactive choice and its side effects once for the command's application context. `jour init` explicitly creates repo-local storage.
+* **Note document** parses common front matter and body content while retaining the original serialized note. Body validation is delegated to an injected note-format registry; Markdown and JSON are built in, and applications can register additional validators that expose structured data to JMESPath. Create/edit follow explicit `draft → validated → saved` transitions, with rejected and discarded outcomes; archive and KVP operations express metadata changes as document transitions.
+
+These boundaries keep CLI syntax, storage selection, note-format validation, and persistence separate without requiring a general-purpose state-machine framework. The `NoteStore` interface remains the persistence seam for future storage backends.
+
+For a contributor guide to adding commands and working with these state models, see [Command and State Architecture](./COMMAND_ARCHITECTURE.md).
+
+To extend formats in an embedding application, import `NoteFormat`, `NoteFormatRegistry`, and `create_default_note_formats()` from `jour_cli`. Register an object implementing `name` and `parse_body(body)`, then pass the registry to `AppFactory` as `note_formats`. The parser validates the body and may return any JSON-serializable structured value for JMESPath queries; the registry checks that contract. The standalone CLI uses the built-in Markdown and JSON formats.
+
 ---
 
 ## Testing

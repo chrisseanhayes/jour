@@ -5,9 +5,56 @@ from unittest.mock import patch
 from typer.testing import CliRunner
 
 from jour_cli.cmd import cli
+from jour_cli.cmd.cli import CommandState
 
 
 class CliScopeTests(unittest.TestCase):
+    def test_command_aliases_normalize_to_same_invocation(self):
+        runner = CliRunner()
+        with patch.object(cli, "run_cmd") as run_cmd:
+            direct = runner.invoke(cli.app, ["make", "--note", "hello"])
+            grouped = runner.invoke(cli.app, ["notes", "make", "--note", "hello"])
+
+        self.assertEqual(direct.exit_code, 0, direct.output)
+        self.assertEqual(grouped.exit_code, 0, grouped.output)
+        self.assertEqual(run_cmd.call_args_list[0], run_cmd.call_args_list[1])
+        self.assertEqual(run_cmd.call_args_list[0].args[0], ("notes", "make"))
+
+    def test_command_state_exposes_parsed_arguments(self):
+        state = CommandState.from_arguments(("history",), {"count": 5})
+
+        self.assertEqual(state.name, "history")
+        self.assertEqual(state.path, ("history",))
+        self.assertEqual(state.positional_arguments, {})
+        self.assertEqual(state.options, {"count": 5})
+        self.assertEqual(state.to_args().count, 5)
+
+    def test_command_state_separates_positionals_and_options(self):
+        state = CommandState.from_arguments(
+            ("notes", "archive"),
+            {"hash": "note-id", "undo": True},
+            positional_names=("hash",),
+        )
+
+        self.assertEqual(state.name, "notes archive")
+        self.assertEqual(state.positional_arguments, {"hash": "note-id"})
+        self.assertEqual(state.options, {"undo": True})
+        self.assertEqual(state.to_args().hash, "note-id")
+        self.assertTrue(state.to_args().undo)
+
+    def test_cli_command_state_marks_file_as_positional_and_type_as_option(self):
+        with patch.object(cli, "run_cmd") as run_cmd:
+            result = CliRunner().invoke(
+                cli.app,
+                ["make", "--type", "json", "notes.json"],
+            )
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertEqual(run_cmd.call_args.args[0], ("notes", "make"))
+        self.assertEqual(run_cmd.call_args.kwargs["positional"], ("file",))
+        self.assertEqual(run_cmd.call_args.kwargs["file"], "notes.json")
+        self.assertEqual(run_cmd.call_args.kwargs["note_type"], "json")
+
     def test_version_option_displays_installed_version_without_configuring_app(self):
         runner = CliRunner()
         with patch.object(cli.app_factory, "set_global_mode") as set_global_mode:

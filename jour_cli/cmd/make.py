@@ -2,10 +2,9 @@ from jour_cli.app_factory import AppFactory
 from jour_cli.shared.note_content import (
     _build_note_content,
     _extract_hashtags,
-    _has_note_body,
-    _parse_json_note_data,
 )
 from jour_cli.shared.note_input import _resolve_note_input
+from jour_cli.shared.note_lifecycle import NoteLifecycle, NoteLifecycleState
 
 
 def make_note(args, app_factory: AppFactory):
@@ -33,35 +32,44 @@ def make_note(args, app_factory: AppFactory):
     if should_open_editor and note_type == "json":
         note_body = "{}"
     content = _build_note_content(layout, date_str, tags, note_body, note_type)
-    try:
-        _parse_json_note_data(content)
-    except ValueError as error:
-        dependencies.write_stderr(f"Error: Invalid JSON note: {error}")
+    lifecycle = NoteLifecycle.draft(content).validate(app_factory.note_formats)
+    if lifecycle.state == NoteLifecycleState.REJECTED:
+        dependencies.write_stderr(f"Error: Invalid note: {lifecycle.error}")
         dependencies.exit(1)
     note_id = note_store.create(content, tags)
+    lifecycle.mark_saved()
 
     if should_open_editor:
         note_store.edit(note_id, app_factory.get_editor(config))
         edited_content = note_store.get(note_id)
         if edited_content is None:
             dependencies.write_stdout("No note created.")
-        elif not _has_note_body(edited_content):
-            if note_store.delete(note_id):
-                dependencies.write_stdout("No note created.")
-            else:
-                dependencies.write_stderr(
-                    f"Error: Note {note_id} could not be removed."
-                )
-                dependencies.exit(1)
         else:
-            try:
-                _parse_json_note_data(edited_content)
-            except ValueError as error:
+            edited_lifecycle = NoteLifecycle.draft(edited_content).validate(
+                app_factory.note_formats
+            )
+            if edited_lifecycle.state == NoteLifecycleState.REJECTED:
                 if not note_store.delete(note_id):
                     dependencies.write_stderr(
-                        f"Error: Invalid JSON note: {error}. "
+                        f"Error: Invalid note: {edited_lifecycle.error}. "
                         f"Note {note_id} could not be removed."
                     )
                 else:
-                    dependencies.write_stderr(f"Error: Invalid JSON note: {error}")
+                    dependencies.write_stderr(
+                        f"Error: Invalid note: {edited_lifecycle.error}"
+                    )
                 dependencies.exit(1)
+            document = edited_lifecycle.document
+            if document is None:
+                raise RuntimeError("Validated note lifecycle is missing its document.")
+            if not document.body:
+                edited_lifecycle = edited_lifecycle.discard()
+                if note_store.delete(note_id):
+                    dependencies.write_stdout("No note created.")
+                else:
+                    dependencies.write_stderr(
+                        f"Error: Note {note_id} could not be removed."
+                    )
+                    dependencies.exit(1)
+            else:
+                edited_lifecycle.mark_saved()

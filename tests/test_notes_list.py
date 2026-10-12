@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock
 
 from jour_cli.cmd.list import list_notes
+from jour_cli.shared.note_formats import create_default_note_formats
 from jour_cli.storage.note_store import Note
 
 
@@ -14,6 +15,7 @@ class NotesListTests(unittest.TestCase):
         self.note_store = Mock()
         self.note_store.list.return_value = [self.archived_note, self.active_note]
         self.app_factory = Mock()
+        self.app_factory.note_formats = create_default_note_formats()
         self.app_factory.get_note_store.return_value = self.note_store
 
     def test_archived_notes_are_hidden_by_default(self):

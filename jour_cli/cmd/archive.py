@@ -1,8 +1,5 @@
 from jour_cli.app_factory import AppFactory
-from jour_cli.shared.note_content import (
-    _add_front_matter_tag,
-    _remove_front_matter_tag,
-)
+from jour_cli.shared.note_document import NoteDocument
 
 
 def archive_note(args, app_factory: AppFactory):
@@ -18,10 +15,11 @@ def archive_note(args, app_factory: AppFactory):
     undo = getattr(args, "undo", False)
     action = "unarchive" if undo else "archive"
     try:
+        document = NoteDocument.from_content(content)
         if undo:
-            updated_content = _remove_front_matter_tag(content, "jour-archive")
+            updated_content = document.remove_tag("jour-archive").content
         else:
-            updated_content = _add_front_matter_tag(content, "jour-archive")
+            updated_content = document.add_tag("jour-archive").content
     except ValueError as error:
         dependencies.write_stderr(f"Error: Failed to {action} note: {error}")
         dependencies.exit(1)

@@ -1,7 +1,8 @@
-import sqlite3
+from dataclasses import dataclass
 from importlib.metadata import version as package_version
-from enum import Enum
-from typing import Any, Callable, Optional
+import sqlite3
+from types import MappingProxyType, SimpleNamespace
+from typing import Any, Callable, Mapping, Optional, Tuple
 
 import typer
 
@@ -36,9 +37,39 @@ app.add_typer(notes_app, name="notes")
 app.add_typer(tags_app, name="tags")
 
 
-class NoteType(str, Enum):
-    MARKDOWN = "markdown"
-    JSON = "json"
+@dataclass(frozen=True)
+class CommandState:
+    """Normalized command path, positional values, and options for one invocation."""
+
+    path: Tuple[str, ...]
+    positional_arguments: Mapping[str, Any]
+    options: Mapping[str, Any]
+
+    @classmethod
+    def from_arguments(
+        cls,
+        path: Tuple[str, ...],
+        arguments: Mapping[str, Any],
+        positional_names: Tuple[str, ...] = (),
+    ) -> "CommandState":
+        positional = {
+            name: arguments[name] for name in positional_names if name in arguments
+        }
+        options = {
+            name: value for name, value in arguments.items() if name not in positional
+        }
+        return cls(
+            path=path,
+            positional_arguments=MappingProxyType(positional),
+            options=MappingProxyType(options),
+        )
+
+    @property
+    def name(self) -> str:
+        return " ".join(self.path)
+
+    def to_args(self) -> SimpleNamespace:
+        return SimpleNamespace(**self.positional_arguments, **self.options)
 
 
 def version_callback(value: bool) -> None:
@@ -64,10 +95,19 @@ def configure_app(
     app_factory.set_global_mode(global_mode)
 
 
-def run_cmd(cmd_name: str, cmd_func: Callable[..., Any], **kwargs: Any) -> Any:
+def run_cmd(
+    command_path: Tuple[str, ...],
+    cmd_func: Callable[..., Any],
+    *,
+    positional: Tuple[str, ...] = (),
+    **arguments: Any,
+) -> Any:
     """Construct argument object, log command, and execute target function."""
-    args = type('Args', (), kwargs)()
-    app_factory.log_command(cmd_name, args=args)
+    command_state = CommandState.from_arguments(
+        command_path, arguments, positional_names=positional
+    )
+    args = command_state.to_args()
+    app_factory.log_command(command_state.name, args=args)
     return cmd_func(args=args, app_factory=app_factory)
 
 
@@ -76,20 +116,21 @@ def notes_make(
     note: Optional[str] = typer.Option(None, "-n", "--note", help="Note body text"),
     tag: Optional[str] = typer.Option(None, "-t", "--tag", help="Comma-delimited tags"),
     file: Optional[str] = typer.Argument(None, help="Optional file to read note from"),
-    note_type: NoteType = typer.Option(
-        NoteType.MARKDOWN,
+    note_type: str = typer.Option(
+        "markdown",
         "--type",
-        help="Note type: markdown or json",
+        help="Registered note format (built-in: markdown, json)",
     ),
 ):
     """Create a new note."""
     run_cmd(
-        "notes make",
+        ("notes", "make"),
         make_note,
+        positional=("file",),
         note=note,
         tag=tag,
         file=file,
-        note_type=note_type.value,
+        note_type=note_type,
     )
 
 
@@ -104,7 +145,7 @@ def notes_list(
 ):
     """List notes, excluding those tagged 'jour-archive' by default."""
     run_cmd(
-        "notes list",
+        ("notes", "list"),
         list_notes,
         show_archived=show_archived,
         jmespath_query=jmespath_query,
@@ -119,7 +160,13 @@ def notes_archive(
     ),
 ):
     """Archive a note, or use --undo to remove its archive tag."""
-    run_cmd("notes archive", archive_note, hash=hash, undo=undo)
+    run_cmd(
+        ("notes", "archive"),
+        archive_note,
+        positional=("hash",),
+        hash=hash,
+        undo=undo,
+    )
 
 
 @notes_app.command("cat")
@@ -127,7 +174,7 @@ def notes_cat(
     hash: str = typer.Argument(..., help="Note hash"),
 ):
     """View a note by hash."""
-    run_cmd("notes cat", cat_note, hash=hash)
+    run_cmd(("notes", "cat"), cat_note, positional=("hash",), hash=hash)
 
 
 @notes_app.command("delete")
@@ -135,7 +182,7 @@ def notes_delete(
     hash: str = typer.Argument(..., help="Note hash"),
 ):
     """Delete a note by hash."""
-    run_cmd("notes delete", delete_note, hash=hash)
+    run_cmd(("notes", "delete"), delete_note, positional=("hash",), hash=hash)
 
 
 @notes_app.command("edit")
@@ -143,7 +190,7 @@ def notes_edit(
     hash: str = typer.Argument(..., help="Note hash"),
 ):
     """Edit a note by hash."""
-    run_cmd("notes edit", edit_note, hash=hash)
+    run_cmd(("notes", "edit"), edit_note, positional=("hash",), hash=hash)
 
 
 @app.command("add-kvp")
@@ -153,7 +200,14 @@ def add_note_kvp(
     hash: str = typer.Argument(..., help="Note hash"),
 ):
     """Add or replace a string key/value pair on a note."""
-    run_cmd("add-kvp", add_kvp, key=key, value=value, hash=hash)
+    run_cmd(
+        ("add-kvp",),
+        add_kvp,
+        positional=("hash",),
+        key=key,
+        value=value,
+        hash=hash,
+    )
 
 
 # Keep the original grouped commands available while exposing the common
@@ -169,7 +223,7 @@ app.command("edit")(notes_edit)
 @app.command()
 def init():
     """Initialize repo-local Jour storage in the current Git repository."""
-    run_cmd("init", init_local_journal)
+    run_cmd(("init",), init_local_journal)
 
 
 @app.command()
@@ -177,8 +231,10 @@ def history(
     count: int = typer.Option(20, "-n", "--count", help="Number of entries to show (default: 20)"),
 ):
     """Show command history."""
-    args = type('Args', (), {'count': count})()
-    app_factory.log_command("history", args=args)
+    command_state = CommandState.from_arguments(
+        ("history",), {"count": count}
+    )
+    app_factory.log_command(command_state.name, args=command_state.to_args())
     lines = app_factory.read_history(limit=count)
     for line in lines:
         app_factory.dependencies.write_stdout(line)
@@ -187,13 +243,13 @@ def history(
 @app.command()
 def prune():
     """Delete all notes with empty bodies."""
-    run_cmd("prune", cmd_prune)
+    run_cmd(("prune",), cmd_prune)
 
 
 @app.command()
 def rebuild():
     """Rebuild the note index from the current notes."""
-    run_cmd("rebuild", cmd_rebuild)
+    run_cmd(("rebuild",), cmd_rebuild)
 
 
 @app.command()
@@ -205,13 +261,13 @@ def index(
     """Inspect the note index."""
     if not status:
         raise typer.BadParameter("Use --status to inspect the index.")
-    run_cmd("index", cmd_index_status, status=status)
+    run_cmd(("index",), cmd_index_status, status=status)
 
 
 @tags_app.command("list")
 def tags_list():
     """List all tags."""
-    run_cmd("tags list", cmd_tags_list)
+    run_cmd(("tags", "list"), cmd_tags_list)
 
 
 @tags_app.command("show")
@@ -219,7 +275,7 @@ def tags_show(
     tag: str = typer.Argument(..., help="Tag name"),
 ):
     """Show notes for a specific tag."""
-    run_cmd("tags show", cmd_tags_show, tag=tag)
+    run_cmd(("tags", "show"), cmd_tags_show, positional=("tag",), tag=tag)
 
 
 def main():

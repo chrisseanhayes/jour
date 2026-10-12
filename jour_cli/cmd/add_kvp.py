@@ -1,5 +1,5 @@
 from jour_cli.app_factory import AppFactory
-from jour_cli.shared.note_content import _add_front_matter_kvp
+from jour_cli.shared.note_document import NoteDocument
 
 
 def add_kvp(args, app_factory: AppFactory):
@@ -13,7 +13,9 @@ def add_kvp(args, app_factory: AppFactory):
         dependencies.exit(1)
 
     try:
-        updated_content = _add_front_matter_kvp(content, args.key, args.value)
+        updated_content = (
+            NoteDocument.from_content(content).set_kvp(args.key, args.value).content
+        )
     except ValueError as error:
         dependencies.write_stderr(f"Error: Failed to add KVP to note: {error}")
         dependencies.exit(1)

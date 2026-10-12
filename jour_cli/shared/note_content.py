@@ -4,12 +4,10 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import yaml
 
+from jour_cli.shared.note_formats import DEFAULT_NOTE_FORMATS
+
 
 _HASHTAG_PATTERN = re.compile(r"(?<![\w#])#([\w]+(?:-[\w]+)*)(?![\w-])")
-
-
-def _reject_json_constant(value: str) -> None:
-    raise ValueError(f"Invalid JSON constant: {value}")
 
 
 def _extract_hashtags(text: str) -> List[str]:
@@ -25,9 +23,11 @@ def _build_note_content(
     note_type: str = "markdown",
 ) -> str:
     """Construct the markdown content with YAML front matter."""
-    if note_type not in ("markdown", "json"):
-        raise ValueError("Note type must be 'markdown' or 'json'.")
-    type_metadata = "type: json\n" if note_type == "json" else ""
+    if not isinstance(note_type, str) or not re.fullmatch(
+        r"[A-Za-z][A-Za-z0-9_-]*", note_type
+    ):
+        raise ValueError("Note type must be a non-empty identifier.")
+    type_metadata = f"type: {note_type}\n" if note_type != "markdown" else ""
     return f"""---
 layout: {layout}
 title: "{date_str}"
@@ -55,13 +55,8 @@ def _get_note_type(content: str) -> str:
 
 def _parse_json_note_data(content: str) -> Optional[Dict[str, Any]]:
     """Parse a JSON note body, requiring its top-level value to be an object."""
-    if _get_note_type(content) != "json":
-        return None
     _, body = _parse_note_content(content)
-    data = json.loads(body, parse_constant=_reject_json_constant)
-    if not isinstance(data, dict):
-        raise ValueError("JSON note body must be a JSON object.")
-    return data
+    return DEFAULT_NOTE_FORMATS.parse_if_supported(_get_note_type(content), body)
 
 
 def _parse_note_content(content: str) -> Tuple[List[str], str]:

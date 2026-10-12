@@ -10,6 +10,11 @@ from .shared.note_input import (
     _resolve_filename_from_history,
     _resolve_note_body,
 )
+from .shared.note_formats import (
+    NoteFormat,
+    NoteFormatRegistry,
+    create_default_note_formats,
+)
 from .app_factory import AppFactory
 from .storage import (
     FileSystemNoteStore,

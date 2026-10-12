@@ -3,30 +3,30 @@ from typing import Any, Dict, List
 
 import jmespath
 
-from jour_cli.shared.note_content import (
-    _get_note_type,
-    _parse_json_note_data,
-    _parse_note_content,
-)
+from jour_cli.shared.note_document import NoteDocument
+from jour_cli.shared.note_formats import DEFAULT_NOTE_FORMATS, NoteFormatRegistry
 from jour_cli.storage.note_store import Note
 
 
-def query_notes(notes: List[Note], expression: str) -> str:
+def query_notes(
+    notes: List[Note],
+    expression: str,
+    formats: NoteFormatRegistry = DEFAULT_NOTE_FORMATS,
+) -> str:
     """Apply a JMESPath expression to structured notes and serialize its result."""
     records: List[Dict[str, Any]] = []
     for note in notes:
-        _, body = _parse_note_content(note.content)
-        note_type = _get_note_type(note.content)
-        data = _parse_json_note_data(note.content)
-        record = dict(data) if data is not None else {}
+        document = NoteDocument.from_content(note.content)
+        data = document.structured_data(formats)
+        record = dict(data) if isinstance(data, dict) else {}
         record.update(
             {
                 "id": note.id,
-                "type": note_type,
+                "type": document.note_type,
                 "tags": note.tags,
                 "kvp": note.kvp,
                 "content": note.content,
-                "body": body,
+                "body": document.body,
                 "data": data,
             }
         )

@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from jour_cli.shared.dependencies import Dependencies
 from jour_cli.shared.editor import Editor
-from jour_cli.shared.note_content import _parse_note_content, _parse_note_kvp
+from jour_cli.shared.note_document import NoteDocument
 from jour_cli.storage.note_store import Note, NoteStore, TagIndex
 
 
@@ -23,16 +23,15 @@ class FileSystemNoteStore(NoteStore):
         self.tag_index = tag_index
 
     def create(self, content: str, tags: List[str]) -> str:
-        parsed_tags, _ = _parse_note_content(content)
-        kvp = _parse_note_kvp(content)
-        all_tags = list(dict.fromkeys(tags + parsed_tags))
+        document = NoteDocument.from_content(content)
+        all_tags = list(dict.fromkeys(tags + document.tags))
         self.dependencies.makedirs(self.storage, exist_ok=True)
         timestamp = self.dependencies.now().strftime("%Y%m%d%H%M%S")
         uid = self.dependencies.new_uuid_hex()[:8]
         note_id = f"{timestamp}_{uid}"
         filepath = self._filepath(note_id)
         self.dependencies.write_file(filepath, content)
-        self.tag_index.index_note(filepath, all_tags, kvp)
+        self.tag_index.index_note(filepath, all_tags, document.kvp)
         return note_id
 
     def get(self, note_id: str) -> Optional[str]:
@@ -67,10 +66,9 @@ class FileSystemNoteStore(NoteStore):
         filepath = self._filepath(note_id)
         if not self.dependencies.exists(filepath):
             return False
-        tags, _ = _parse_note_content(content)
-        kvp = _parse_note_kvp(content)
+        document = NoteDocument.from_content(content)
         self.dependencies.write_file(filepath, content)
-        self.tag_index.index_note(filepath, tags, kvp)
+        self.tag_index.index_note(filepath, document.tags, document.kvp)
         return True
 
     def delete(self, note_id: str) -> bool:
@@ -87,8 +85,8 @@ class FileSystemNoteStore(NoteStore):
             return False
         editor.open(filepath)
         content = self.dependencies.read_file(filepath)
-        tags, _ = _parse_note_content(content)
-        self.tag_index.index_note(filepath, tags, _parse_note_kvp(content))
+        document = NoteDocument.from_content(content)
+        self.tag_index.index_note(filepath, document.tags, document.kvp)
         return True
 
     def search(self, query: str) -> List[str]:
@@ -116,8 +114,8 @@ class FileSystemNoteStore(NoteStore):
             f"*.{self.extension}", self.storage
         ):
             content = self.dependencies.read_file(filepath)
-            tags, _ = _parse_note_content(content)
-            notes.append((filepath, tags, _parse_note_kvp(content)))
+            document = NoteDocument.from_content(content)
+            notes.append((filepath, document.tags, document.kvp))
         self.tag_index.rebuild(notes)
         return len(notes)
 
@@ -136,8 +134,8 @@ class FileSystemNoteStore(NoteStore):
             f"*.{self.extension}", self.storage
         ):
             content = self.dependencies.read_file(filepath)
-            tags, _ = _parse_note_content(content)
-            self.tag_index.index_note(filepath, tags, _parse_note_kvp(content))
+            document = NoteDocument.from_content(content)
+            self.tag_index.index_note(filepath, document.tags, document.kvp)
 
     def _filepath(self, note_id: str) -> str:
         if not note_id or self.dependencies.basename(note_id) != note_id:

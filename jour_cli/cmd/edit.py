@@ -1,6 +1,6 @@
 from jour_cli.app_factory import AppFactory
-from jour_cli.shared.note_content import _has_note_body, _parse_json_note_data
 from jour_cli.shared.note_input import _resolve_filename_from_history
+from jour_cli.shared.note_lifecycle import NoteLifecycle, NoteLifecycleState
 
 
 def edit_note(args, app_factory: AppFactory):
@@ -30,24 +30,31 @@ def edit_note(args, app_factory: AppFactory):
                 "refresh the note index."
             )
             dependencies.exit(1)
-        try:
-            _parse_json_note_data(edited_content)
-        except ValueError as error:
+        edited_lifecycle = NoteLifecycle.draft(edited_content).validate(
+            app_factory.note_formats
+        )
+        if edited_lifecycle.state == NoteLifecycleState.REJECTED:
             if original_content is None or not note_store.update(
                 note_id, original_content
             ):
                 dependencies.write_stderr(
-                    f"Error: Invalid JSON note: {error}. "
+                    f"Error: Invalid note: {edited_lifecycle.error}. "
                     f"Note {note_id} could not be restored."
                 )
             else:
-                dependencies.write_stderr(f"Error: Invalid JSON note: {error}")
+                dependencies.write_stderr(
+                    f"Error: Invalid note: {edited_lifecycle.error}"
+                )
             dependencies.exit(1)
-        if not _has_note_body(edited_content):
+        document = edited_lifecycle.document
+        if document is None:
+            raise RuntimeError("Validated note lifecycle is missing its document.")
+        if not document.body:
             if dependencies.confirm(
                 f"Note {note_id} is empty. Delete it?", default=False
             ):
                 if note_store.delete(note_id):
+                    edited_lifecycle.discard()
                     dependencies.write_stdout(f"Note {note_id} deleted.")
                 else:
                     dependencies.write_stderr(
@@ -61,6 +68,10 @@ def edit_note(args, app_factory: AppFactory):
                     f"Error: Note {note_id} could not be restored."
                 )
                 dependencies.exit(1)
+            else:
+                edited_lifecycle.discard()
+        else:
+            edited_lifecycle.mark_saved()
     except Exception as e:
         dependencies.write_stderr(f"Error: Failed to edit note: {e}")
         dependencies.exit(1)
