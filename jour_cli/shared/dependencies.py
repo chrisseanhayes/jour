@@ -1,4 +1,5 @@
 import glob
+import logging
 import os
 import shlex
 import subprocess
@@ -26,6 +27,7 @@ class Dependencies:
         platform_name: Optional[str] = None,
         environment: Optional[Mapping[str, str]] = None,
         working_directory: Optional[str] = None,
+        logger: Optional[logging.Logger] = None,
     ):
         self._os = os
         self._glob = glob
@@ -44,6 +46,7 @@ class Dependencies:
         self._platform = platform_name if platform_name is not None else sys.platform
         self._environment = environment if environment is not None else os.environ
         self._working_directory = working_directory
+        self.logger = logger if logger is not None else logging.getLogger("jour")
 
     def now(self) -> datetime:
         """Return the current time from the configured clock."""

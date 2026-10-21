@@ -43,6 +43,13 @@ class RuntimeInjectionTests(unittest.TestCase):
         self.assertEqual(_default_editor(dependencies), "custom-editor")
         self.assertEqual(dependencies.expanduser("~/.jour"), "/home/test/.jour")
 
+    def test_logger_is_injected_into_dependencies(self):
+        logger = Mock()
+
+        dependencies = Dependencies(logger=logger)
+
+        self.assertIs(dependencies.logger, logger)
+
     def test_stdout_and_stderr_are_injected(self):
         stdout = StringIO()
         stderr = StringIO()

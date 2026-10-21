@@ -9,6 +9,7 @@ dependencies = [
     "jmespath",
     "PyYAML",
     "typer",
+    "watchdog",
 ]
 requires-python = ">=3.8"
 description = "Minimal CLI Journal"

@@ -1,6 +1,8 @@
+from contextlib import contextmanager
 import json
 import sqlite3
-from typing import Any, Callable, Dict, List, Optional, Tuple
+import time
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
 
 from jour_cli.shared.dependencies import Dependencies
 
@@ -30,6 +32,12 @@ CREATE TABLE IF NOT EXISTS kvp_values (
 );
 
 CREATE INDEX IF NOT EXISTS idx_kvp_key_value ON kvp_values(key, value);
+
+CREATE TABLE IF NOT EXISTS pending_note_changes (
+    filepath TEXT PRIMARY KEY,
+    revision INTEGER NOT NULL,
+    queued_at REAL NOT NULL
+);
 """
 
 
@@ -53,6 +61,17 @@ class SQLiteTagIndex:
     def initialize(self) -> None:
         with self._get_conn() as conn:
             conn.executescript(_SCHEMA)
+            columns = {
+                row["name"]
+                for row in conn.execute(
+                    "PRAGMA table_info(pending_note_changes)"
+                ).fetchall()
+            }
+            if "queued_at" not in columns:
+                conn.execute(
+                    "ALTER TABLE pending_note_changes "
+                    "ADD COLUMN queued_at REAL NOT NULL DEFAULT 0"
+                )
 
     def index_note(
         self,
@@ -138,11 +157,59 @@ class SQLiteTagIndex:
             rows = conn.execute("SELECT filename FROM notes").fetchall()
         return [row["filename"] for row in rows]
 
-    def _get_conn(self) -> sqlite3.Connection:
+    def enqueue_note_change(self, filepath: str) -> None:
+        with self._get_conn() as conn:
+            conn.execute(
+                """
+                INSERT INTO pending_note_changes (filepath, revision, queued_at)
+                VALUES (?, 1, ?)
+                ON CONFLICT(filepath) DO UPDATE
+                SET revision = pending_note_changes.revision + 1,
+                    queued_at = excluded.queued_at
+                """,
+                (filepath, time.time()),
+            )
+
+    def pending_note_changes(
+        self, debounce_seconds: float = 0
+    ) -> List[Tuple[str, int]]:
+        with self._get_conn() as conn:
+            rows = conn.execute(
+                """
+                SELECT filepath, revision
+                FROM pending_note_changes
+                WHERE queued_at <= ?
+                ORDER BY filepath
+                """,
+                (time.time() - debounce_seconds,),
+            ).fetchall()
+        return [(row["filepath"], row["revision"]) for row in rows]
+
+    def complete_note_change(self, filepath: str, revision: int) -> None:
+        with self._get_conn() as conn:
+            conn.execute(
+                "DELETE FROM pending_note_changes WHERE filepath = ? AND revision = ?",
+                (filepath, revision),
+            )
+
+    @contextmanager
+    def _get_conn(self) -> Iterator[sqlite3.Connection]:
         conn = self.connection_factory(self.database_path)
-        conn.execute("PRAGMA foreign_keys = ON")
-        conn.row_factory = sqlite3.Row
-        return conn
+        try:
+            conn.execute("PRAGMA foreign_keys = ON")
+            conn.row_factory = sqlite3.Row
+            # Originally, each CLI call ended soon after opening this connection,
+            # so the process reclaimed it on exit. The long-running watcher opens
+            # many connections over its lifetime, making that an ongoing leak:
+            # `with conn` commits but does not close. Yield so this context manager
+            # can close every connection promptly.
+            yield conn
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
 
     def _index_note(
         self,

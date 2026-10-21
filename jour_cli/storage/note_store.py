@@ -44,6 +44,17 @@ class TagIndex(Protocol):
     def indexed_filenames(self) -> List[str]:
         """Return all filenames currently recorded in the index."""
 
+    def enqueue_note_change(self, filepath: str) -> None:
+        """Persist a filesystem change until the note index processes it."""
+
+    def pending_note_changes(
+        self, debounce_seconds: float = 0
+    ) -> List[Tuple[str, int]]:
+        """Return queued changes that have been quiet for the given duration."""
+
+    def complete_note_change(self, filepath: str, revision: int) -> None:
+        """Remove a queued change if it has not been superseded."""
+
 
 class NoteStore(ABC):
     """Persistence interface used by commands to manage notes."""

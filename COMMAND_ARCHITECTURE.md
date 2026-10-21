@@ -64,6 +64,11 @@ Follow the dependency-injection style already used by neighboring handlers:
   the command.
 * Report failures explicitly through the existing stderr/exit pattern.
 
+`jour watch` is an intentionally long-running command scoped to global
+filesystem storage. It persists note paths to the SQLite index database before
+processing them and reconciles the directory on startup so edits or deletions
+made while it was stopped are picked up after restart.
+
 ### 2. Register syntax in the Typer CLI
 
 Import the handler in `jour_cli/cmd/cli.py` and declare a Typer command with

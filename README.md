@@ -35,6 +35,14 @@ Requires `pipx` for clean, isolated installation without modifying system Python
 
 This script checks for `pipx` (installing it via Homebrew if missing), installs `jour` to `~/.local/bin`, and requires that directory to be in your `$PATH`.
 
+On macOS, install the global notes watcher as a per-user LaunchAgent after installing Jour:
+
+```bash
+./install-watcher.sh
+```
+
+The script is safe to rerun; it updates and restarts `com.jour.global-watcher`. The agent starts at login and restarts if it exits. Its output is written to `~/.jour/watcher.log`, including filesystem events, startup reconciliation, index updates, and processing errors. To stop and remove the agent, run `launchctl bootout "gui/$(id -u)" "$HOME/Library/LaunchAgents/com.jour.global-watcher.plist"` and remove that plist.
+
 ---
 
 ## Commands
@@ -49,6 +57,7 @@ This script checks for `pipx` (installing it via Homebrew if missing), installs 
 * **`jour delete <hash>`**: Permanently delete a note and remove it from the index.
 * **`jour prune`**: Delete all notes with empty bodies.
 * **`jour rebuild`**: Rebuild the tag and key/value indexes from the current note files, removing entries for notes that were deleted outside Jour.
+* **`jour watch`**: Keep the global tag and key/value indexes current as note files change. Run it as a long-lived process; changes are debounced for one second, pending work is stored in SQLite, and files are reconciled when the watcher starts.
 * **`jour index --status`**: Show when the index was last rebuilt and how many indexed notes have been deleted from disk.
 * **`jour init`**: Explicitly initialize repo-local storage and its metadata index inside a Git repository.
 * **`jour git init`**: Initialize a dedicated Git repository in the active Jour storage directory. `jour git commit` commits changes to note files only (using the configured storage extension); metadata and other staged files are not included. Use `-m`/`--message` to set a commit message (default: `Update notes`). Add `-g` before the command to track the global journal instead.
@@ -62,6 +71,7 @@ This script checks for `pipx` (installing it via Homebrew if missing), installs 
 * **File Storage**: Flat files (`~/.jour/*.jmd`) with YAML front matter.
 * **Identifiers**: Chronological prefix with a UUID suffix (`{YYYYmmddHHMMSS}_{8-char uuid hex}`).
 * **Tag and Key/Value Index**: Lightweight SQLite database (`~/.jour/jour.db`) indexes tags and `kvp` front matter. Location is configurable via `database.path` in `~/.jour/.jourconfig`.
+* **Global note watcher**: `jour watch` always watches the global storage directory, even when started inside a repository. It uses the platform's native file events where available. Configure it to start at login with your operating system's service manager if continuous background monitoring is desired. On startup it reconciles files with the index, and queued events remain available after an interrupted run.
 
 Notes can include string-keyed, JSON-compatible values in a `kvp` YAML front-matter mapping. These values are stored in the SQLite index and available in JMESPath queries, for example `jour list -q "[?kvp.key1 == 'value1'].id"`:
 

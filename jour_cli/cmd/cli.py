@@ -24,6 +24,7 @@ from jour_cli.cmd.prune import cmd_prune
 from jour_cli.cmd.rebuild import cmd_rebuild
 from jour_cli.cmd.index import cmd_index_status
 from jour_cli.cmd.git import cmd_git_commit, cmd_git_init
+from jour_cli.cmd.watch import cmd_watch
 
 app = typer.Typer()
 notes_app = typer.Typer()
@@ -269,6 +270,12 @@ def prune():
 def rebuild():
     """Rebuild the note index from the current notes."""
     run_cmd(("rebuild",), cmd_rebuild)
+
+
+@app.command()
+def watch():
+    """Watch global notes and keep their metadata index up to date."""
+    run_cmd(("watch",), cmd_watch)
 
 
 @app.command()
