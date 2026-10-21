@@ -1,5 +1,5 @@
 # src package
-from .shared.dependencies import Dependencies
+from .shared.dependencies import AdHoc, Dependencies, IO, SQLite
 from .shared.editor import CommandEditor, Editor, get_editor
 from .shared.note_content import (
     _build_note_content,

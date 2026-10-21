@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from importlib.metadata import version as package_version
-import sqlite3
 from types import MappingProxyType, SimpleNamespace
 from typing import Any, Callable, Mapping, Optional, Tuple
 
@@ -33,7 +32,7 @@ git_app = typer.Typer()
 app_factory = AppFactory(
     DefaultDependenciesFactory(),
     load_config,
-    FileSystemNoteStoreFactory(sqlite3.connect),
+    FileSystemNoteStoreFactory(),
     get_editor,
 )
 app.add_typer(notes_app, name="notes")

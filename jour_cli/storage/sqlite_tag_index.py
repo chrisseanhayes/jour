@@ -48,11 +48,15 @@ class SQLiteTagIndex:
         self,
         database_path: str,
         dependencies: Dependencies,
-        connection_factory: Callable[[str], sqlite3.Connection],
+        connection_factory: Optional[Callable[[str], sqlite3.Connection]] = None,
     ):
         self.dependencies = dependencies
         self.database_path = database_path
-        self.connection_factory = connection_factory
+        self.connection_factory = (
+            connection_factory
+            if connection_factory is not None
+            else dependencies.sqlite.connect
+        )
         database_directory = self.dependencies.dirname(self.database_path)
         if database_directory:
             self.dependencies.makedirs(database_directory, exist_ok=True)

@@ -1,5 +1,5 @@
 import sqlite3
-from typing import Callable
+from typing import Callable, Optional
 
 from jour_cli.config import get_storage_path
 from jour_cli.shared.dependencies import Dependencies
@@ -34,7 +34,7 @@ class FileSystemNoteStoreFactory:
 
     def __init__(
         self,
-        database_connection_factory: DatabaseConnectionFactory,
+        database_connection_factory: Optional[DatabaseConnectionFactory] = None,
     ):
         self._database_connection_factory = database_connection_factory
 
@@ -42,12 +42,17 @@ class FileSystemNoteStoreFactory:
         database_path = dependencies.expanduser(
             config.get("database", {}).get("path", "~/.jour/jour.db")
         )
+        connection_factory = (
+            self._database_connection_factory
+            if self._database_connection_factory is not None
+            else dependencies.sqlite.connect
+        )
         return build_note_store(
             config,
             dependencies,
             lambda _config, _dependencies: SQLiteTagIndex(
                 database_path=database_path,
                 dependencies=dependencies,
-                connection_factory=self._database_connection_factory,
+                connection_factory=connection_factory,
             ),
         )

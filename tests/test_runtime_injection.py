@@ -11,7 +11,13 @@ from jour_cli.app_factory import AppFactory
 from jour_cli.cmd.make import make_note
 from jour_cli.config import StorageScope, _default_editor, load_config
 from jour_cli.history import log_command, read_history
-from jour_cli.shared.dependencies import Dependencies, DependenciesFactory
+from jour_cli.shared.dependencies import (
+    AdHoc,
+    Dependencies,
+    DependenciesFactory,
+    IO,
+    SQLite,
+)
 from jour_cli.shared.editor import Editor, get_editor
 from jour_cli.storage.filesystem_note_store import FileSystemNoteStore
 from jour_cli.storage.factory import FileSystemNoteStoreFactory, build_note_store
@@ -332,6 +338,137 @@ class RuntimeInjectionTests(unittest.TestCase):
         content = note_store.create.call_args.args[0]
         self.assertIn('title: "2026/10/10"', content)
         self.assertIn("date: 2026/10/10", content)
+
+    def test_segregated_io_dependency_isolated(self):
+        fake_files = {}
+
+        def fake_open(filepath, mode="r"):
+            if "w" in mode:
+                buf = StringIO()
+                orig_close = buf.close
+
+                def on_close():
+                    fake_files[filepath] = buf.getvalue()
+                    orig_close()
+
+                buf.close = on_close
+                return buf
+            if filepath in fake_files:
+                return StringIO(fake_files[filepath])
+            raise FileNotFoundError(filepath)
+
+        io_dep = IO(
+            file_opener=fake_open,
+            path_expander=lambda p: p.replace("~", "/custom/home", 1),
+            working_directory="/custom/work",
+        )
+
+        self.assertEqual(io_dep.expanduser("~/notes"), "/custom/home/notes")
+        self.assertEqual(io_dep.dirname("/custom/home/notes/a.txt"), "/custom/home/notes")
+        self.assertEqual(io_dep.basename("/custom/home/notes/a.txt"), "a.txt")
+        self.assertEqual(io_dep.splitext("a.txt"), ("a", ".txt"))
+        self.assertEqual(io_dep.join("/custom", "dir"), os.path.join("/custom", "dir"))
+
+        io_dep.write_file("/custom/test.txt", "hello io")
+        self.assertEqual(io_dep.read_file("/custom/test.txt"), "hello io")
+
+    def test_segregated_sqlite_dependency_isolated(self):
+        mock_conn = Mock(spec=sqlite3.Connection)
+        mock_factory = Mock(return_value=mock_conn)
+
+        sqlite_dep = SQLite(connection_factory=mock_factory)
+
+        self.assertIs(sqlite_dep.connection_factory, mock_factory)
+        conn = sqlite_dep.connect("/custom/db.sqlite")
+        mock_factory.assert_called_once_with("/custom/db.sqlite")
+        self.assertIs(conn, mock_conn)
+
+        # Context manager test
+        with sqlite_dep.connection("/custom/db2.sqlite") as ctx_conn:
+            self.assertIs(ctx_conn, mock_conn)
+        mock_conn.close.assert_called_once()
+
+    def test_segregated_adhoc_dependency_isolated(self):
+        now_dt = datetime(2026, 10, 21, 12, 0, 0)
+        test_uuid = UUID("abcdef01-2345-6789-abcd-ef0123456789")
+        stdout = StringIO()
+        stderr = StringIO()
+        exit_mock = Mock()
+        logger_mock = Mock()
+
+        adhoc = AdHoc(
+            clock=lambda: now_dt,
+            uuid_factory=lambda: test_uuid,
+            stdin=StringIO("adhoc input"),
+            stdout=stdout,
+            stderr=stderr,
+            exit_process=exit_mock,
+            platform_name="linux",
+            environment={"CUSTOM_KEY": "custom_val"},
+            logger=logger_mock,
+        )
+
+        self.assertEqual(adhoc.now(), now_dt)
+        self.assertEqual(adhoc.new_uuid_hex(), "abcdef0123456789abcdef0123456789")
+        self.assertFalse(adhoc.is_macos())
+        self.assertEqual(adhoc.get_environment_variable("CUSTOM_KEY"), "custom_val")
+        self.assertEqual(adhoc.stdin_read(), "adhoc input")
+        adhoc.write_stdout("out")
+        adhoc.write_stderr("err")
+        self.assertEqual(stdout.getvalue(), "out\n")
+        self.assertEqual(stderr.getvalue(), "err\n")
+        adhoc.exit(42)
+        exit_mock.assert_called_once_with(42)
+        self.assertIs(adhoc.logger, logger_mock)
+
+    def test_composite_dependencies_delegates_to_injected_components(self):
+        mock_io = Mock(spec=IO)
+        mock_sqlite = Mock(spec=SQLite)
+        mock_adhoc = Mock(spec=AdHoc)
+
+        mock_io.read_file.return_value = "content from mock io"
+        mock_adhoc.now.return_value = datetime(2026, 10, 21, 10, 0)
+        mock_sqlite.connect.return_value = "mock_connection"
+
+        deps = Dependencies(io=mock_io, sqlite=mock_sqlite, adhoc=mock_adhoc)
+
+        self.assertIs(deps.io, mock_io)
+        self.assertIs(deps.sqlite, mock_sqlite)
+        self.assertIs(deps.adhoc, mock_adhoc)
+
+        self.assertEqual(deps.read_file("/path/file"), "content from mock io")
+        mock_io.read_file.assert_called_once_with("/path/file")
+
+        self.assertEqual(deps.now(), datetime(2026, 10, 21, 10, 0))
+        mock_adhoc.now.assert_called_once()
+
+        self.assertEqual(deps.connect_sqlite("/path/db.sqlite"), "mock_connection")
+        mock_sqlite.connect.assert_called_once_with("/path/db.sqlite")
+
+    def test_sqlite_injected_dependency_used_by_tag_index_and_factory(self):
+        mock_conn = Mock(spec=sqlite3.Connection)
+        mock_cursor = Mock()
+        mock_conn.cursor.return_value = mock_cursor
+        mock_conn.execute.return_value = mock_cursor
+        mock_cursor.fetchall.return_value = []
+        mock_conn_factory = Mock(return_value=mock_conn)
+
+        sqlite_dep = SQLite(connection_factory=mock_conn_factory)
+        dependencies = Dependencies(sqlite=sqlite_dep)
+
+        with tempfile.TemporaryDirectory() as directory:
+            db_path = os.path.join(directory, "test.db")
+            # SQLiteTagIndex without explicit connection_factory uses dependencies.sqlite.connect
+            tag_index = SQLiteTagIndex(db_path, dependencies)
+            self.assertEqual(tag_index.connection_factory, sqlite_dep.connect)
+            conn = tag_index.connection_factory(db_path)
+            mock_conn_factory.assert_called_with(db_path)
+            self.assertIs(conn, mock_conn)
+
+            # FileSystemNoteStoreFactory without explicit database_connection_factory uses dependencies.sqlite.connect
+            store_factory = FileSystemNoteStoreFactory()
+            store = store_factory({"database": {"path": db_path}}, dependencies)
+            self.assertIsInstance(store, FileSystemNoteStore)
 
 
 if __name__ == "__main__":
