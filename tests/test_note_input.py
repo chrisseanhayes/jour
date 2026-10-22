@@ -13,7 +13,10 @@ from jour_cli.shared.note_content import (
     _has_note_body,
     _parse_note_content,
 )
-from jour_cli.shared.note_input import _resolve_note_input
+from jour_cli.shared.note_input import (
+    _resolve_filename_from_history,
+    _resolve_note_input,
+)
 from jour_cli.storage import NoteStore
 
 
@@ -289,6 +292,33 @@ Body with #new-tag and #existing.
             note_store.create.call_args.args[1],
             ["manual", "helloworld", "this-great-day", "code"],
         )
+
+    def test_resolve_filename_from_history_uses_hash_when_provided(self):
+        filename = _resolve_filename_from_history(
+            SimpleNamespace(hash="explicit-hash"), self.dependencies
+        )
+        self.assertEqual(filename, "explicit-hash")
+        self.dependencies.get_history.assert_not_called()
+
+    def test_resolve_filename_from_history_falls_back_to_last_command(self):
+        self.dependencies.get_history.return_value = [
+            "[2026-10-10 12:00:00] notes make 20261010120000_12345678"
+        ]
+        self.dependencies.split_command.side_effect = lambda cmd: cmd.split()
+
+        filename = _resolve_filename_from_history(
+            SimpleNamespace(hash=None), self.dependencies
+        )
+        self.assertEqual(filename, "20261010120000_12345678")
+        self.dependencies.get_history.assert_called_once_with(limit=1)
+
+    def test_resolve_filename_from_history_returns_none_when_empty_history(self):
+        self.dependencies.get_history.return_value = []
+
+        filename = _resolve_filename_from_history(
+            SimpleNamespace(hash=None), self.dependencies
+        )
+        self.assertIsNone(filename)
 
 
 if __name__ == "__main__":

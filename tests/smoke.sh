@@ -266,6 +266,16 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# 16. history log verification
+# ---------------------------------------------------------------------------
+echo "\n[16] history log verification"
+if [ -f ~/.jour/logs/history ] && grep -qE "notes make|notes list|tags list" ~/.jour/logs/history; then
+    pass "commands were logged to history"
+else
+    fail "history log missing or empty"
+fi
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 echo "\n================================"
